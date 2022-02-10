@@ -35,7 +35,7 @@ describe("BridgeEscrow", function () {
   });
 });
 
-describe("BridgeEscrow_deposit", function () {
+describe("BridgeEscrowDeposit", function () {
   it("Should return the new greeting once it's changed", async function () {
     const Greeter = await ethers.getContractFactory("BridgeEscrow");
     const greeter = await Greeter.deploy("Hello, world! BridgeEscrow");
@@ -43,7 +43,7 @@ describe("BridgeEscrow_deposit", function () {
 
     expect(await greeter.greet()).to.equal("Hello, world! BridgeEscrow");
 
-    const setGreetingTx = await greeter.create_transfer_account_this(
+    const setGreetingTx = await greeter.createTransferAccountThis(
       "0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8",
       100,
       "0xeab47fa3a3dc42bc8cbc48c02182669d"

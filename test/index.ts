@@ -35,6 +35,7 @@ describe("BridgeEscrow", function () {
   });
 });
 
+
 describe("BridgeEscrowDeposit", function () {
   it("Should return the new greeting once it's changed", async function () {
     const Greeter = await ethers.getContractFactory("BridgeEscrow");

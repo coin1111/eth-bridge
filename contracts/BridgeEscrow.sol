@@ -37,6 +37,44 @@ contract BridgeEscrow {
         greeting = _greeting;
     }
 
+    // Creates an account for transfer between 0L->0L accounts
+    // Used for testing purposes
+    // When user initiates a transfer it calls this method which
+    // moves funds from user account into an escrow account.
+    // It also creates an entry in locked to indicate such transfer.
+    // Executed under user account
+    function createTransferAccountThis(
+                                        address receiver_address,
+                                        uint64 amount,
+                                        bytes16 transfer_id) public {
+        bytes16 empty; 
+        createTransferAccountAux(receiver_address,
+            empty, amount, transfer_id);
+    }
+
+    // Creates an account for transfer between 0L->eth accounts
+    // When user initiates a transfer it calls this method which
+    // moves funds from user account into an escrow account.
+    // It also creates an entry in locked to indicate such transfer.
+    // Executed under user account
+     function createTransferAccount(
+                                            bytes16 receiver_address,
+                                            uint64 amount,
+                                            bytes16 transfer_id) public  {
+        address zero = 0x0000000000000000000000000000000000000000;
+        createTransferAccountAux(zero,
+            receiver_address, amount, transfer_id);
+    }
+
+    function createTransferAccountAux(
+                                    address receiver_this,
+                                    bytes16 receiver_other,
+                                    uint64 amount,
+                                    bytes16 transfer_id) public {
+        console.log("Inside create_transfer_account_aux");
+    }
+
+
     function greet() public view returns (string memory) {
         return greeting;
     }

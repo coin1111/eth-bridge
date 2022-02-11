@@ -27,10 +27,15 @@ contract BridgeEscrow {
     }
 
     struct EscrowState {
-        AccountInfo[] locked;
-        AccountInfo[] unlocked;
+        mapping(bytes16 => AccountInfo) locked;
+        mapping(bytes16 => AccountInfo) unlocked;
         uint64 balance;
     }
+
+    address payable zero_payable = payable(address( 0x0000000000000000000000000000000000000000));
+    bytes16 empty_bytes;
+
+    EscrowState escrowState;
 
     constructor(string memory _greeting) {
         console.log("Deploying a BridgeEscrow with greeting:", _greeting);
@@ -44,12 +49,11 @@ contract BridgeEscrow {
     // It also creates an entry in locked to indicate such transfer.
     // Executed under user account
     function createTransferAccountThis(
-                                        address receiver_address,
+                                        address payable receiver_address,
                                         uint64 amount,
-                                        bytes16 transfer_id) public {
-        bytes16 empty; 
-        createTransferAccountAux(receiver_address,
-            empty, amount, transfer_id);
+                                        bytes16 transfer_id) public payable {
+        createTransferAccountAux(msg.sender, empty_bytes, receiver_address,
+            empty_bytes, amount, transfer_id);
     }
 
     // Creates an account for transfer between 0L->eth accounts
@@ -60,18 +64,36 @@ contract BridgeEscrow {
      function createTransferAccount(
                                             bytes16 receiver_address,
                                             uint64 amount,
-                                            bytes16 transfer_id) public  {
+                                            bytes16 transfer_id) public payable {
         address zero = 0x0000000000000000000000000000000000000000;
-        createTransferAccountAux(zero,
+        createTransferAccountAux(zero, empty_bytes, zero_payable,
             receiver_address, amount, transfer_id);
     }
 
     function createTransferAccountAux(
-                                    address receiver_this,
+                                    address sender_this,
+                                    bytes16 sender_other,
+                                    address payable receiver_this,
                                     bytes16 receiver_other,
                                     uint64 amount,
-                                    bytes16 transfer_id) public {
-        console.log("Inside create_transfer_account_aux");
+                                    bytes16 transfer_id) public payable {
+        console.log("Inside create_transfer_account_aux %s", msg.sender);
+        // amount must be positive
+        require(amount > 0, "amount must be positive");
+        // destination address must be valid
+        if (receiver_this == zero_payable) {
+            require(receiver_other != empty_bytes, "receiver must be a valid address");
+        }
+        // check if transfer_id is present
+        require(escrowState.locked[transfer_id].transfer_id == 0x0, "transfer_id exists");
+        escrowState.locked[transfer_id] =  AccountInfo({
+            sender_this : sender_this,
+            sender_other : sender_other,
+            receiver_this: receiver_this,
+            receiver_other: receiver_other,
+            balance : amount,
+            transfer_id: transfer_id
+        });
     }
 
 

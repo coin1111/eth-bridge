@@ -44,13 +44,13 @@ describe("BridgeEscrowDeposit", function () {
 
     expect(await greeter.greet()).to.equal("Hello, world! BridgeEscrow");
 
-    const setGreetingTx = await greeter.createTransferAccountThis(
+    const [owner, addr1, addr2] = await ethers.getSigners();
+    const depositTx = await greeter.connect(addr1).createTransferAccountThis(
+
       "0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8",
       100,
       "0xeab47fa3a3dc42bc8cbc48c02182669d"
     );
 
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
   });
 });

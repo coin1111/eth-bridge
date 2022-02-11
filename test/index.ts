@@ -1,42 +1,18 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-describe("Greeter", function () {
-  it("Should return the new greeting once it's changed", async function () {
-    const Greeter = await ethers.getContractFactory("Greeter");
-    const greeter = await Greeter.deploy("Hello, world!");
-    await greeter.deployed();
-
-    expect(await greeter.greet()).to.equal("Hello, world!");
-
-    const setGreetingTx = await greeter.setGreeting("Hola, mundo!");
-
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
-
-    expect(await greeter.greet()).to.equal("Hola, mundo!");
-  });
-});
-
-describe("BridgeEscrow", function () {
-  it("Should return the new greeting once it's changed", async function () {
-    const Greeter = await ethers.getContractFactory("BridgeEscrow");
-    const greeter = await Greeter.deploy("Hello, world! BridgeEscrow");
-    await greeter.deployed();
-
-    expect(await greeter.greet()).to.equal("Hello, world! BridgeEscrow");
-
-    const setGreetingTx = await greeter.setGreeting("Hola, mundo! BridgeEscrow");
-
-    // wait until the transaction is mined
-    await setGreetingTx.wait();
-
-    expect(await greeter.greet()).to.equal("Hola, mundo! BridgeEscrow");
-  });
-});
 
 describe("BridgeEscrowDepositWithdraw", function () {
   it("Should return the new greeting once it's changed", async function () {
+    // deploy 0L ERC20 token
+    const COIN_SCALING_FACTOR = 1000000;
+    const COIN_SUPPLY = 1000;
+    const OLToken = await ethers.getContractFactory("OLToken");
+    console.log('Deploying OLToken...');
+    const token = await OLToken.deploy((COIN_SUPPLY*COIN_SCALING_FACTOR).toString());
+    await token.deployed();
+    console.log("GLDToken deployed to:", token.address);
+
     const Greeter = await ethers.getContractFactory("BridgeEscrow");
     const greeter = await Greeter.deploy("Hello, world! BridgeEscrow");
     await greeter.deployed();

@@ -35,22 +35,34 @@ describe("BridgeEscrow", function () {
   });
 });
 
-
-describe("BridgeEscrowDeposit", function () {
+describe("BridgeEscrowDepositWithdraw", function () {
   it("Should return the new greeting once it's changed", async function () {
     const Greeter = await ethers.getContractFactory("BridgeEscrow");
     const greeter = await Greeter.deploy("Hello, world! BridgeEscrow");
     await greeter.deployed();
 
-    expect(await greeter.greet()).to.equal("Hello, world! BridgeEscrow");
-
-    const [owner, addr1, addr2] = await ethers.getSigners();
-    const depositTx = await greeter.connect(addr1).createTransferAccountThis(
-
-      "0xEA674fdDe714fd979de3EdF0F56AA9716B898ec8",
+    const [owner, executorAddr, sender, receiver] = await ethers.getSigners();
+    const  transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
+    const depositTx = await greeter.connect(sender).createTransferAccountThis(
+      receiver.address,
       100,
-      "0xeab47fa3a3dc42bc8cbc48c02182669d"
+      transfer_id
+    );
+
+    const withdrawTx = await greeter.connect(executorAddr).withdrawFromEscrowThis(
+      sender.address, // sender
+      receiver.address, // receiver
+      100,
+      transfer_id
+    );
+    const deleteTransferAccountTx = await greeter.connect(executorAddr).deleteTransferAccount(
+      transfer_id
+    );
+
+    const deleteUnlockedTx = await greeter.connect(executorAddr).deleteUnlocked(
+      transfer_id
     );
 
   });
 });
+

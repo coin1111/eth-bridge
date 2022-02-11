@@ -32,8 +32,9 @@ contract BridgeEscrow {
         uint64 balance;
     }
 
-    address payable zero_payable = payable(address( 0x0000000000000000000000000000000000000000));
-    bytes16 empty_bytes;
+    address payable ZERO_ADDRESS_PAYABLE = payable(address( 0x0000000000000000000000000000000000000000));
+    address ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
+    bytes16 EMPTY_BYTES;
 
     EscrowState escrowState;
 
@@ -52,8 +53,8 @@ contract BridgeEscrow {
                                         address payable receiver_address,
                                         uint64 amount,
                                         bytes16 transfer_id) public payable {
-        createTransferAccountAux(msg.sender, empty_bytes, receiver_address,
-            empty_bytes, amount, transfer_id);
+        createTransferAccountAux(msg.sender, EMPTY_BYTES, receiver_address,
+            EMPTY_BYTES, amount, transfer_id);
     }
 
     // Creates an account for transfer between 0L->eth accounts
@@ -65,8 +66,7 @@ contract BridgeEscrow {
                                             bytes16 receiver_address,
                                             uint64 amount,
                                             bytes16 transfer_id) public payable {
-        address zero = 0x0000000000000000000000000000000000000000;
-        createTransferAccountAux(zero, empty_bytes, zero_payable,
+        createTransferAccountAux(ZERO_ADDRESS, EMPTY_BYTES, ZERO_ADDRESS_PAYABLE,
             receiver_address, amount, transfer_id);
     }
 
@@ -81,8 +81,8 @@ contract BridgeEscrow {
         // amount must be positive
         require(amount > 0, "amount must be positive");
         // destination address must be valid
-        if (receiver_this == zero_payable) {
-            require(receiver_other != empty_bytes, "receiver must be a valid address");
+        if (receiver_this == ZERO_ADDRESS_PAYABLE) {
+            require(receiver_other != EMPTY_BYTES, "receiver must be a valid address");
         }
         // check if transfer_id is present
         require(escrowState.locked[transfer_id].transfer_id == 0x0, "transfer_id exists");
@@ -93,6 +93,86 @@ contract BridgeEscrow {
             receiver_other: receiver_other,
             balance : amount,
             transfer_id: transfer_id
+        });
+    }
+    function withdrawFromEscrowThis(
+                                        address sender_address, // sender on this  chain
+                                        address payable receiver_address, // receiver on this chain
+                                        uint64 balance, // balance to transfer
+                                        bytes16 transfer_id // transfer_id
+    ) public  {
+        withdrawFromEscrowAux(sender_address, EMPTY_BYTES, receiver_address, balance, transfer_id);
+    }
+
+    // Moves funds from escrow account to user account between eth->0L accounts
+    // Creates an entry in unlocked vector to indicate such transfer.
+    // Executed under escrow account
+    function withdrawFromEscrow(
+                                            bytes16 sender_address, // sender on the other chain
+                                            address payable receiver_address, // receiver on this chain
+                                            uint64 balance, // balance to transfer
+                                            bytes16 transfer_id // transfer_id
+    ) public  {
+        withdrawFromEscrowAux(ZERO_ADDRESS, sender_address, receiver_address, balance, transfer_id);
+    }
+
+    // Moves funds from escrow account to user account.
+    // Creates an entry in unlocked vector to indicate such transfer.
+    // Executed under escrow account
+    function withdrawFromEscrowAux(
+                                    address sender_this, // sender on this  chain
+                                    bytes16 sender_other, // sender on the other chain
+                                    address payable receiver_this, // receiver on this chain
+                                    uint64 balance, // balance to transfer
+                                    bytes16 transfer_id // transfer_id
+    ) public  {
+        console.log("Inside withdrawFromEscrowAux %s", msg.sender);
+        // amoubalancent must be positive
+        require(balance > 0, "balance must be positive");
+        // destination address must be valid
+        require(receiver_this != ZERO_ADDRESS_PAYABLE, "receiver must be a valid address");
+        if (sender_this == ZERO_ADDRESS) {
+            require(sender_other != EMPTY_BYTES, "sender must be a valid address");
+        }
+        // check if transfer_id is present
+        require(escrowState.unlocked[transfer_id].transfer_id == 0x0, "transfer_id exists");
+        escrowState.unlocked[transfer_id] =  AccountInfo({
+        sender_this : sender_this,
+        sender_other : sender_other,
+        receiver_this: receiver_this,
+        receiver_other: EMPTY_BYTES,
+        balance : balance,
+        transfer_id: transfer_id
+        });
+    }
+    // Remove transfer account when transfer is completed
+    // Removes entry in locked vector.
+    // Executed under escrow account
+    function deleteTransferAccount(bytes16 transfer_id)
+    public {
+        require(escrowState.locked[transfer_id].transfer_id != 0x0, "transfer_id must exist");
+        // delete (reset) entry in locked
+        escrowState.locked[transfer_id] =  AccountInfo({
+        sender_this : ZERO_ADDRESS,
+        sender_other : EMPTY_BYTES,
+        receiver_this: ZERO_ADDRESS_PAYABLE,
+        receiver_other: EMPTY_BYTES,
+        balance : 0,
+        transfer_id: EMPTY_BYTES
+        });
+    }
+
+    function deleteUnlocked(bytes16 transfer_id)
+    public {
+        require(escrowState.unlocked[transfer_id].transfer_id != 0x0, "transfer_id must exist");
+        // delete (reset) entry in unlocked
+        escrowState.unlocked[transfer_id] =  AccountInfo({
+        sender_this : ZERO_ADDRESS,
+        sender_other : EMPTY_BYTES,
+        receiver_this: ZERO_ADDRESS_PAYABLE,
+        receiver_other: EMPTY_BYTES,
+        balance : 0,
+        transfer_id: EMPTY_BYTES
         });
     }
 

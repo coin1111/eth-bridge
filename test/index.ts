@@ -35,7 +35,7 @@ describe("BridgeEscrow", function () {
   });
 
   describe("BridgeEscrowDepositWithdraw", function () {
-    it("Should return the new greeting once it's changed", async function () {
+    it("Should transfer between senderAddr and receiverAddr", async function () {
 
       const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
       const escrow = await BridgeEscrow.deploy(olToken.address);
@@ -50,27 +50,37 @@ describe("BridgeEscrow", function () {
 
       // deposit
       const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
+      let senderBalanceBefore = await olToken.balanceOf(senderAddr.address);
+      let contractBalanceBefore = await olToken.balanceOf(escrow.address);
       const depositTx = await escrow.connect(senderAddr).createTransferAccountThis(
         receiverAddr.address,
         amount,
         transfer_id
       );
+      let senderBalanceAfter = await olToken.balanceOf(senderAddr.address);
+      expect(senderBalanceBefore.toNumber()-senderBalanceAfter.toNumber()).to.equal(amount);
 
-      let contractBalance = await olToken.balanceOf(escrow.address);
-      expect(contractBalance).to.equal(amount);
+      let contractBalanceAfter = await olToken.balanceOf(escrow.address);
+      expect(contractBalanceAfter.toNumber()-contractBalanceBefore.toNumber()).to.equal(amount);
 
       // withdraw
+      let receiverBalanceBefore = await olToken.balanceOf(receiverAddr.address);
       const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrowThis(
         senderAddr.address, // sender
         receiverAddr.address, // receiver
         amount,
         transfer_id
       );
-      const deleteTransferAccountTx = await escrow.connect(executorAddr).deleteTransferAccount(
+      let receiverBalanceAfter = await olToken.balanceOf(receiverAddr.address);
+      expect(receiverBalanceAfter.toNumber()-receiverBalanceBefore.toNumber()).to.equal(amount);
+
+      // delete transfer entry on sender's chain
+      const deleteTransferAccountTx = await escrow.connect(receiverAddr).closeTransferAccountSender(
         transfer_id
       );
 
-      const deleteUnlockedTx = await escrow.connect(executorAddr).deleteUnlocked(
+      // delete transfer entry on receiver's chain
+      const deleteUnlockedTx = await escrow.connect(executorAddr).closeTransferAccountReceiver(
         transfer_id
       );
 

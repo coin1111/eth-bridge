@@ -5,7 +5,6 @@ import "hardhat/console.sol";
 import "./OLToken.sol";
 
 contract BridgeEscrow {
-    string private greeting;
 
     struct AccountInfo {
         // user address on this chain
@@ -205,7 +204,7 @@ contract BridgeEscrow {
     // Remove transfer account when transfer is completed
     // Removes entry in locked vector.
     // Executed under escrow account
-    function deleteTransferAccount(bytes16 transfer_id) public {
+    function closeTransferAccountSender(bytes16 transfer_id) public {
         require(
             escrowState.locked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
@@ -221,7 +220,7 @@ contract BridgeEscrow {
         });
     }
 
-    function deleteUnlocked(bytes16 transfer_id) public {
+    function closeTransferAccountReceiver(bytes16 transfer_id) public {
         require(
             escrowState.unlocked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
@@ -235,14 +234,5 @@ contract BridgeEscrow {
             balance: 0,
             transfer_id: EMPTY_BYTES
         });
-    }
-
-    function greet() public view returns (string memory) {
-        return greeting;
-    }
-
-    function setGreeting(string memory _greeting) public {
-        console.log("Changing greeting from '%s' to '%s'", greeting, _greeting);
-        greeting = _greeting;
     }
 }

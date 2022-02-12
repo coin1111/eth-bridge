@@ -2,11 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
+import "./OLToken.sol";
 
 contract BridgeEscrow {
     string private greeting;
 
-    struct AccountInfo { 
+    struct AccountInfo {
         // user address on this chain
         // eth->0L transfer
         address sender_this;
@@ -32,15 +33,20 @@ contract BridgeEscrow {
         uint64 balance;
     }
 
-    address payable ZERO_ADDRESS_PAYABLE = payable(address( 0x0000000000000000000000000000000000000000));
+    address public owner;
+    IERC20 private olToken;
+
+    address payable ZERO_ADDRESS_PAYABLE =
+        payable(address(0x0000000000000000000000000000000000000000));
     address ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
     bytes16 EMPTY_BYTES;
 
     EscrowState escrowState;
 
-    constructor(string memory _greeting) {
-        console.log("Deploying a BridgeEscrow with greeting:", _greeting);
-        greeting = _greeting;
+    constructor(address _token) {
+        console.log("Deploying a BridgeEscrow: for token");
+        owner = msg.sender;
+        olToken = OLToken(_token);
     }
 
     // Creates an account for transfer between 0L->0L accounts
@@ -50,11 +56,18 @@ contract BridgeEscrow {
     // It also creates an entry in locked to indicate such transfer.
     // Executed under user account
     function createTransferAccountThis(
-                                        address payable receiver_address,
-                                        uint64 amount,
-                                        bytes16 transfer_id) public payable {
-        createTransferAccountAux(msg.sender, EMPTY_BYTES, receiver_address,
-            EMPTY_BYTES, amount, transfer_id);
+        address payable receiver_address,
+        uint64 amount,
+        bytes16 transfer_id
+    ) public payable {
+        createTransferAccountAux(
+            msg.sender,
+            EMPTY_BYTES,
+            receiver_address,
+            EMPTY_BYTES,
+            amount,
+            transfer_id
+        );
     }
 
     // Creates an account for transfer between 0L->eth accounts
@@ -62,120 +75,166 @@ contract BridgeEscrow {
     // moves funds from user account into an escrow account.
     // It also creates an entry in locked to indicate such transfer.
     // Executed under user account
-     function createTransferAccount(
-                                            bytes16 receiver_address,
-                                            uint64 amount,
-                                            bytes16 transfer_id) public payable {
-        createTransferAccountAux(ZERO_ADDRESS, EMPTY_BYTES, ZERO_ADDRESS_PAYABLE,
-            receiver_address, amount, transfer_id);
+    function createTransferAccount(
+        bytes16 receiver_address,
+        uint64 amount,
+        bytes16 transfer_id
+    ) public payable {
+        createTransferAccountAux(
+            ZERO_ADDRESS,
+            EMPTY_BYTES,
+            ZERO_ADDRESS_PAYABLE,
+            receiver_address,
+            amount,
+            transfer_id
+        );
     }
 
     function createTransferAccountAux(
-                                    address sender_this,
-                                    bytes16 sender_other,
-                                    address payable receiver_this,
-                                    bytes16 receiver_other,
-                                    uint64 amount,
-                                    bytes16 transfer_id) public payable {
+        address sender_this,
+        bytes16 sender_other,
+        address payable receiver_this,
+        bytes16 receiver_other,
+        uint64 amount,
+        bytes16 transfer_id
+    ) public payable {
         console.log("Inside create_transfer_account_aux %s", msg.sender);
         // amount must be positive
         require(amount > 0, "amount must be positive");
         // destination address must be valid
         if (receiver_this == ZERO_ADDRESS_PAYABLE) {
-            require(receiver_other != EMPTY_BYTES, "receiver must be a valid address");
+            require(
+                receiver_other != EMPTY_BYTES,
+                "receiver must be a valid address"
+            );
         }
         // check if transfer_id is present
-        require(escrowState.locked[transfer_id].transfer_id == 0x0, "transfer_id exists");
-        escrowState.locked[transfer_id] =  AccountInfo({
-            sender_this : sender_this,
-            sender_other : sender_other,
+        require(
+            escrowState.locked[transfer_id].transfer_id == 0x0,
+            "transfer_id exists"
+        );
+
+        // transfer funds
+
+        olToken.transferFrom(msg.sender, address(this), amount);
+
+        // create transfer entry
+        escrowState.locked[transfer_id] = AccountInfo({
+            sender_this: sender_this,
+            sender_other: sender_other,
             receiver_this: receiver_this,
             receiver_other: receiver_other,
-            balance : amount,
+            balance: amount,
             transfer_id: transfer_id
         });
     }
+
     function withdrawFromEscrowThis(
-                                        address sender_address, // sender on this  chain
-                                        address payable receiver_address, // receiver on this chain
-                                        uint64 balance, // balance to transfer
-                                        bytes16 transfer_id // transfer_id
-    ) public  {
-        withdrawFromEscrowAux(sender_address, EMPTY_BYTES, receiver_address, balance, transfer_id);
+        address sender_address, // sender on this  chain
+        address payable receiver_address, // receiver on this chain
+        uint64 balance, // balance to transfer
+        bytes16 transfer_id // transfer_id
+    ) public {
+        withdrawFromEscrowAux(
+            sender_address,
+            EMPTY_BYTES,
+            receiver_address,
+            balance,
+            transfer_id
+        );
     }
 
     // Moves funds from escrow account to user account between eth->0L accounts
     // Creates an entry in unlocked vector to indicate such transfer.
     // Executed under escrow account
     function withdrawFromEscrow(
-                                            bytes16 sender_address, // sender on the other chain
-                                            address payable receiver_address, // receiver on this chain
-                                            uint64 balance, // balance to transfer
-                                            bytes16 transfer_id // transfer_id
-    ) public  {
-        withdrawFromEscrowAux(ZERO_ADDRESS, sender_address, receiver_address, balance, transfer_id);
+        bytes16 sender_address, // sender on the other chain
+        address payable receiver_address, // receiver on this chain
+        uint64 balance, // balance to transfer
+        bytes16 transfer_id // transfer_id
+    ) public {
+        withdrawFromEscrowAux(
+            ZERO_ADDRESS,
+            sender_address,
+            receiver_address,
+            balance,
+            transfer_id
+        );
     }
 
     // Moves funds from escrow account to user account.
     // Creates an entry in unlocked vector to indicate such transfer.
     // Executed under escrow account
     function withdrawFromEscrowAux(
-                                    address sender_this, // sender on this  chain
-                                    bytes16 sender_other, // sender on the other chain
-                                    address payable receiver_this, // receiver on this chain
-                                    uint64 balance, // balance to transfer
-                                    bytes16 transfer_id // transfer_id
-    ) public  {
+        address sender_this, // sender on this  chain
+        bytes16 sender_other, // sender on the other chain
+        address payable receiver_this, // receiver on this chain
+        uint64 balance, // balance to transfer
+        bytes16 transfer_id // transfer_id
+    ) public {
         console.log("Inside withdrawFromEscrowAux %s", msg.sender);
         // amoubalancent must be positive
         require(balance > 0, "balance must be positive");
         // destination address must be valid
-        require(receiver_this != ZERO_ADDRESS_PAYABLE, "receiver must be a valid address");
+        require(
+            receiver_this != ZERO_ADDRESS_PAYABLE,
+            "receiver must be a valid address"
+        );
         if (sender_this == ZERO_ADDRESS) {
-            require(sender_other != EMPTY_BYTES, "sender must be a valid address");
+            require(
+                sender_other != EMPTY_BYTES,
+                "sender must be a valid address"
+            );
         }
         // check if transfer_id is present
-        require(escrowState.unlocked[transfer_id].transfer_id == 0x0, "transfer_id exists");
-        escrowState.unlocked[transfer_id] =  AccountInfo({
-        sender_this : sender_this,
-        sender_other : sender_other,
-        receiver_this: receiver_this,
-        receiver_other: EMPTY_BYTES,
-        balance : balance,
-        transfer_id: transfer_id
+        require(
+            escrowState.unlocked[transfer_id].transfer_id == 0x0,
+            "transfer_id exists"
+        );
+        escrowState.unlocked[transfer_id] = AccountInfo({
+            sender_this: sender_this,
+            sender_other: sender_other,
+            receiver_this: receiver_this,
+            receiver_other: EMPTY_BYTES,
+            balance: balance,
+            transfer_id: transfer_id
         });
     }
+
     // Remove transfer account when transfer is completed
     // Removes entry in locked vector.
     // Executed under escrow account
-    function deleteTransferAccount(bytes16 transfer_id)
-    public {
-        require(escrowState.locked[transfer_id].transfer_id != 0x0, "transfer_id must exist");
+    function deleteTransferAccount(bytes16 transfer_id) public {
+        require(
+            escrowState.locked[transfer_id].transfer_id != 0x0,
+            "transfer_id must exist"
+        );
         // delete (reset) entry in locked
-        escrowState.locked[transfer_id] =  AccountInfo({
-        sender_this : ZERO_ADDRESS,
-        sender_other : EMPTY_BYTES,
-        receiver_this: ZERO_ADDRESS_PAYABLE,
-        receiver_other: EMPTY_BYTES,
-        balance : 0,
-        transfer_id: EMPTY_BYTES
+        escrowState.locked[transfer_id] = AccountInfo({
+            sender_this: ZERO_ADDRESS,
+            sender_other: EMPTY_BYTES,
+            receiver_this: ZERO_ADDRESS_PAYABLE,
+            receiver_other: EMPTY_BYTES,
+            balance: 0,
+            transfer_id: EMPTY_BYTES
         });
     }
 
-    function deleteUnlocked(bytes16 transfer_id)
-    public {
-        require(escrowState.unlocked[transfer_id].transfer_id != 0x0, "transfer_id must exist");
+    function deleteUnlocked(bytes16 transfer_id) public {
+        require(
+            escrowState.unlocked[transfer_id].transfer_id != 0x0,
+            "transfer_id must exist"
+        );
         // delete (reset) entry in unlocked
-        escrowState.unlocked[transfer_id] =  AccountInfo({
-        sender_this : ZERO_ADDRESS,
-        sender_other : EMPTY_BYTES,
-        receiver_this: ZERO_ADDRESS_PAYABLE,
-        receiver_other: EMPTY_BYTES,
-        balance : 0,
-        transfer_id: EMPTY_BYTES
+        escrowState.unlocked[transfer_id] = AccountInfo({
+            sender_this: ZERO_ADDRESS,
+            sender_other: EMPTY_BYTES,
+            receiver_this: ZERO_ADDRESS_PAYABLE,
+            receiver_other: EMPTY_BYTES,
+            balance: 0,
+            transfer_id: EMPTY_BYTES
         });
     }
-
 
     function greet() public view returns (string memory) {
         return greeting;

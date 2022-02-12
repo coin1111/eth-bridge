@@ -1,13 +1,15 @@
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { OLToken, OLToken__factory } from "../typechain";
 
 describe("BridgeEscrow", function () {
-  let OLToken;
-  let olToken;
-  let owner;
-  let executorAddr;
-  let senderAddr;
-  let receiverAddr;
+  let OLToken: OLToken__factory;
+  let olToken: OLToken;
+  let owner: SignerWithAddress;
+  let executorAddr: SignerWithAddress;
+  let senderAddr: SignerWithAddress;
+  let receiverAddr: SignerWithAddress;
   let addrs;
   const COIN_SCALING_FACTOR = 1000000;
   const COIN_SUPPLY = 1000;
@@ -17,9 +19,9 @@ describe("BridgeEscrow", function () {
     OLToken = await ethers.getContractFactory("OLToken");
     [owner, executorAddr, senderAddr, receiverAddr, ...addrs] = await ethers.getSigners();
 
-    olToken = await OLToken.deploy((COIN_SUPPLY*COIN_SCALING_FACTOR).toString());
+    olToken = await OLToken.deploy((COIN_SUPPLY * COIN_SCALING_FACTOR).toString());
     await olToken.deployed();
-    console.log("0LToken deployed to:", olToken.address);
+    console.log("0LToken deployed to:", olToken.signer.getAddress());
 
     const ownerBalance = await olToken.balanceOf(owner.address);
     expect(await olToken.totalSupply()).to.equal(ownerBalance);
@@ -29,34 +31,41 @@ describe("BridgeEscrow", function () {
     await olToken.transfer(senderAddr.address, 100);
     const addr1Balance = await olToken.balanceOf(senderAddr.address);
     expect(addr1Balance).to.equal(100);
+
   });
 
   describe("BridgeEscrowDepositWithdraw", function () {
     it("Should return the new greeting once it's changed", async function () {
 
-      const Greeter = await ethers.getContractFactory("BridgeEscrow");
-      const greeter = await Greeter.deploy("Hello, world! BridgeEscrow");
-      await greeter.deployed();
+      const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
+      const escrow = await BridgeEscrow.deploy(olToken.address);
+      await escrow.deployed();
 
-      const [owner, executorAddr, senderAddr, receiverAddr] = await ethers.getSigners();
-      const  transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-      const depositTx = await greeter.connect(senderAddr).createTransferAccountThis(
+      // approve transfer
+      console.log("Sender balance: ", await olToken.balanceOf(senderAddr.address), senderAddr.address);
+      await olToken.connect(senderAddr).approve(escrow.address, 10);
+      let allowed = await olToken.allowance(senderAddr.address, escrow.address);
+      expect(allowed).to.equal(10);
+
+      // deposit
+      const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
+      const depositTx = await escrow.connect(senderAddr).createTransferAccountThis(
         receiverAddr.address,
-        100,
+        10,
         transfer_id
       );
 
-      const withdrawTx = await greeter.connect(executorAddr).withdrawFromEscrowThis(
+      const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrowThis(
         senderAddr.address, // sender
         receiverAddr.address, // receiver
         100,
         transfer_id
       );
-      const deleteTransferAccountTx = await greeter.connect(executorAddr).deleteTransferAccount(
+      const deleteTransferAccountTx = await escrow.connect(executorAddr).deleteTransferAccount(
         transfer_id
       );
 
-      const deleteUnlockedTx = await greeter.connect(executorAddr).deleteUnlocked(
+      const deleteUnlockedTx = await escrow.connect(executorAddr).deleteUnlocked(
         transfer_id
       );
 

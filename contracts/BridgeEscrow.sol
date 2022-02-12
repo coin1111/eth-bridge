@@ -33,6 +33,7 @@ contract BridgeEscrow {
     }
 
     address public owner;
+    address public executor;
     IERC20 private olToken;
 
     address payable ZERO_ADDRESS_PAYABLE =
@@ -40,12 +41,24 @@ contract BridgeEscrow {
     address ZERO_ADDRESS = 0x0000000000000000000000000000000000000000;
     bytes16 EMPTY_BYTES;
 
-    EscrowState escrowState;
+    EscrowState private escrowState;
 
-    constructor(address _token) {
+    modifier onlyExecutor() {
+        require(msg.sender == executor);
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    constructor(address olTokenAddr,
+                address executorAddr) {
         console.log("Deploying a BridgeEscrow: for token");
         owner = msg.sender;
-        olToken = OLToken(_token);
+        olToken = OLToken(olTokenAddr);
+        executor = executorAddr;
     }
 
     // Creates an account for transfer between 0L->0L accounts
@@ -133,7 +146,7 @@ contract BridgeEscrow {
         address payable receiver_address, // receiver on this chain
         uint64 balance, // balance to transfer
         bytes16 transfer_id // transfer_id
-    ) public {
+    ) public onlyExecutor {
         withdrawFromEscrowAux(
             sender_address,
             EMPTY_BYTES,
@@ -151,7 +164,7 @@ contract BridgeEscrow {
         address payable receiver_address, // receiver on this chain
         uint64 balance, // balance to transfer
         bytes16 transfer_id // transfer_id
-    ) public {
+    ) public onlyExecutor {
         withdrawFromEscrowAux(
             ZERO_ADDRESS,
             sender_address,
@@ -170,7 +183,7 @@ contract BridgeEscrow {
         address payable receiver_this, // receiver on this chain
         uint64 balance, // balance to transfer
         bytes16 transfer_id // transfer_id
-    ) public {
+    ) public onlyExecutor {
         console.log("Inside withdrawFromEscrowAux %s", msg.sender);
         // amoubalancent must be positive
         require(balance > 0, "balance must be positive");
@@ -204,7 +217,7 @@ contract BridgeEscrow {
     // Remove transfer account when transfer is completed
     // Removes entry in locked vector.
     // Executed under escrow account
-    function closeTransferAccountSender(bytes16 transfer_id) public {
+    function closeTransferAccountSender(bytes16 transfer_id) public onlyExecutor {
         require(
             escrowState.locked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
@@ -220,7 +233,7 @@ contract BridgeEscrow {
         });
     }
 
-    function closeTransferAccountReceiver(bytes16 transfer_id) public {
+    function closeTransferAccountReceiver(bytes16 transfer_id) public onlyExecutor {
         require(
             escrowState.unlocked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"

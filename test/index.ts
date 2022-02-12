@@ -38,7 +38,7 @@ describe("BridgeEscrow", function () {
     it("Should transfer between senderAddr and receiverAddr", async function () {
 
       const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
-      const escrow = await BridgeEscrow.deploy(olToken.address);
+      const escrow = await BridgeEscrow.deploy(olToken.address, executorAddr.address);
       await escrow.deployed();
 
       // approve transfer
@@ -75,7 +75,7 @@ describe("BridgeEscrow", function () {
       expect(receiverBalanceAfter.toNumber()-receiverBalanceBefore.toNumber()).to.equal(amount);
 
       // delete transfer entry on sender's chain
-      const deleteTransferAccountTx = await escrow.connect(receiverAddr).closeTransferAccountSender(
+      const deleteTransferAccountTx = await escrow.connect(executorAddr).closeTransferAccountSender(
         transfer_id
       );
 

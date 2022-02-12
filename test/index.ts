@@ -42,23 +42,28 @@ describe("BridgeEscrow", function () {
       await escrow.deployed();
 
       // approve transfer
+      let amount = 10;
       console.log("Sender balance: ", await olToken.balanceOf(senderAddr.address), senderAddr.address);
-      await olToken.connect(senderAddr).approve(escrow.address, 10);
+      await olToken.connect(senderAddr).approve(escrow.address, amount);
       let allowed = await olToken.allowance(senderAddr.address, escrow.address);
-      expect(allowed).to.equal(10);
+      expect(allowed).to.equal(amount);
 
       // deposit
       const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
       const depositTx = await escrow.connect(senderAddr).createTransferAccountThis(
         receiverAddr.address,
-        10,
+        amount,
         transfer_id
       );
 
+      let contractBalance = await olToken.balanceOf(escrow.address);
+      expect(contractBalance).to.equal(amount);
+
+      // withdraw
       const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrowThis(
         senderAddr.address, // sender
         receiverAddr.address, // receiver
-        100,
+        amount,
         transfer_id
       );
       const deleteTransferAccountTx = await escrow.connect(executorAddr).deleteTransferAccount(

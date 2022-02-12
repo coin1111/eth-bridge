@@ -199,6 +199,7 @@ contract BridgeEscrow {
             balance: balance,
             transfer_id: transfer_id
         });
+        olToken.transfer(receiver_this, balance);
     }
 
     // Remove transfer account when transfer is completed

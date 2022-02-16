@@ -59,7 +59,8 @@ describe("BridgeEscrow", function () {
       expect(allowed).to.equal(amount);
 
       // deposit
-      const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
+      const transfer_id =
+        "0xeab47fa3a3dc42bc8cbc48c02182669deab47fa3a3dc42bc8cbc48c02182669d";
       const senderBalanceBefore = await olToken.balanceOf(senderAddr.address);
       const contractBalanceBefore = await olToken.balanceOf(escrow.address);
       const depositTx = await escrow

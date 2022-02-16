@@ -19,7 +19,7 @@ async function main() {
 
   let olToken = await OLToken.deploy((COIN_SUPPLY * COIN_SCALING_FACTOR).toString());
   await olToken.deployed();
-  console.log("0LToken deployed to:", olToken.signer.getAddress());
+  console.log("0LToken contract:", olToken.address);
 
   // let ownerKey = getPrivateKey("../accounts/alice.txt");
   // let executorKey = getPrivateKey("../accounts/bob.txt");
@@ -29,20 +29,29 @@ async function main() {
   // let senderWallet = new ethers.Wallet(senderKey);
   // console.log("owner: ", ownerWallet.address)
 
-  let [owner, executorAddr, senderAddr, receiverAddr, ...addrs] = await ethers.getSigners();
+  let [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] = await ethers.getSigners();
 
 
   // Deploy BridgeEscrow contract
   const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
-  const escrow = await BridgeEscrow.connect(owner)
-    .deploy(olToken.address, executorAddr.address);
+  const escrow = await BridgeEscrow.connect(bridgeEscrow)
+    .deploy(olToken.address, alice.address);
   await escrow.deployed();
+  console.log("BridgeEscrow contract:", escrow.address);
 
-  // Transfer 100 tokens from owner to addr1
-  console.log("sender: ", senderAddr.address)
-  await olToken.transfer(senderAddr.address, 100);
-  const addr1Balance = await olToken.balanceOf(senderAddr.address);
+  // Transfer 100 tokens from owner to pete
+  await olToken.transfer(pete.address, 100);
 
+  // save addresses to config
+  let config:any = {
+  olTokenContract: olToken.address,
+  escrowContract:escrow.address
+  }
+  fs.writeFile(".bridge_escrow.config", JSON.stringify(config), function(err) {
+    if (err) {
+        console.log(err);
+    }
+  });
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,7 +1,7 @@
 # Bridge Escrow Contact
 ## Install
 ```
-setup-hardhat.sh
+./setup-hardhat.sh
 ```
 
 ## Compile contract
@@ -21,11 +21,11 @@ npx hardhat test
 ```
 2. Deploy contracts
 ```
-deploy-local.sh
+./deploy-local.sh
 ```
 3. Run contract methods
 ```
-test-escrow.sh
+./test-escrow.sh
 ```
 Contract addresses are saved in .escrow_bridge.config 
 

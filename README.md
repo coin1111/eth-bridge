@@ -1,3 +1,34 @@
+# Bridge Escrow Contact
+## Install
+```
+setup-hardhat.sh
+```
+
+## Compile contract
+```
+npx hardhat compile
+```
+
+## Test contract
+```
+npx hardhat test
+```
+
+## Test contracts on local network
+1. Run test network
+```
+./run-local-node.sh
+```
+2. Deploy contracts
+```
+deploy-local.sh
+```
+3. Run contract methods
+```
+test-escrow.sh
+```
+Contract addresses are saved in .escrow_bridge.config 
+
 # Advanced Sample Hardhat Project
 
 This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.

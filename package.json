@@ -1,5 +1,14 @@
 {
   "name": "eth-bridge",
+  "scripts": {
+    "fix:ts": "npx eslint --ext .ts . --fix",
+    "clean": "npx clean",
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "node": "./scripts/bash/run-local-node.sh",
+    "test:escrow": "./scripts/bash/test-escrow.sh",
+    "deploy:local": "./scripts/bash/deploy-local.sh"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^2.1.8",

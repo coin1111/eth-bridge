@@ -4,31 +4,29 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import * as fs from 'fs';
+import * as fs from "fs";
 
-function getConfig():any {
-  let configJson:any = fs.readFileSync(".bridge_escrow.config",'utf8').toString().trimEnd();
+function getConfig(): any {
+  const configJson: any = fs
+    .readFileSync(".bridge_escrow.config", "utf8")
+    .toString()
+    .trimEnd();
   return JSON.parse(configJson);
 }
 
 async function main() {
+  const config = getConfig();
+  const olTokenAddr = config.olTokenContract;
+  const bridgeEscrowAddr = config.escrowContract;
 
-  let config = getConfig();
-  let olTokenAddr = config.olTokenContract;
-  let bridgeEscrowAddr = config.escrowContract;
-
-
-  let [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] = await ethers.getSigners();
-
+  const [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] =
+    await ethers.getSigners();
 
   // Check balance
   const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-  const olToken = await ethers.getContractAt("OLToken",olTokenAddr);
-  const balance = await olToken.balanceOf(
-    todd.address
-  );
-  console.log("Balance: ",balance);
-  
+  const olToken = await ethers.getContractAt("OLToken", olTokenAddr);
+  const balance = await olToken.balanceOf(todd.address);
+  console.log("Balance: ", balance);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

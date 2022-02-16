@@ -4,20 +4,22 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 import { ethers } from "hardhat";
-import * as fs from 'fs';
+import * as fs from "fs";
 const COIN_SCALING_FACTOR = 1000000;
 const COIN_SUPPLY = 1000;
 
-function getPrivateKey(fName:string) {
-  let a = fs.readFileSync(fName,'utf8').toString().split("\n");
+function getPrivateKey(fName: string) {
+  const a = fs.readFileSync(fName, "utf8").toString().split("\n");
   return a[1].split(":")[1];
 }
 
 async function main() {
   // Deploy ERC20 token contract
-  let OLToken = await ethers.getContractFactory("OLToken");
+  const OLToken = await ethers.getContractFactory("OLToken");
 
-  let olToken = await OLToken.deploy((COIN_SUPPLY * COIN_SCALING_FACTOR).toString());
+  const olToken = await OLToken.deploy(
+    (COIN_SUPPLY * COIN_SCALING_FACTOR).toString()
+  );
   await olToken.deployed();
   console.log("0LToken contract:", olToken.address);
 
@@ -29,13 +31,15 @@ async function main() {
   // let senderWallet = new ethers.Wallet(senderKey);
   // console.log("owner: ", ownerWallet.address)
 
-  let [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] = await ethers.getSigners();
-
+  const [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] =
+    await ethers.getSigners();
 
   // Deploy BridgeEscrow contract
   const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
-  const escrow = await BridgeEscrow.connect(bridgeEscrow)
-    .deploy(olToken.address, alice.address);
+  const escrow = await BridgeEscrow.connect(bridgeEscrow).deploy(
+    olToken.address,
+    alice.address
+  );
   await escrow.deployed();
   console.log("BridgeEscrow contract:", escrow.address);
 
@@ -43,13 +47,13 @@ async function main() {
   await olToken.transfer(pete.address, 100);
 
   // save addresses to config
-  let config:any = {
-  olTokenContract: olToken.address,
-  escrowContract:escrow.address
-  }
-  fs.writeFile(".bridge_escrow.config", JSON.stringify(config), function(err) {
+  const config: any = {
+    olTokenContract: olToken.address,
+    escrowContract: escrow.address,
+  };
+  fs.writeFile(".bridge_escrow.config", JSON.stringify(config), function (err) {
     if (err) {
-        console.log(err);
+      console.log(err);
     }
   });
 }

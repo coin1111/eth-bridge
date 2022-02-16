@@ -1,10 +1,20 @@
 {
-  "name": "hardhat-project",
+  "name": "eth-bridge",
+  "scripts": {
+    "fix:ts": "npx eslint --ext .ts . --fix",
+    "clean": "npx clean",
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "node": "./scripts/bash/run-local-node.sh",
+    "test:escrow": "./scripts/bash/test-escrow.sh",
+    "deploy:local": "./scripts/bash/deploy-local.sh"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.4",
     "@nomiclabs/hardhat-etherscan": "^2.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.2",
     "@typechain/ethers-v5": "^7.2.0",
+    "@openzeppelin/contracts": "^4.5.0",
     "@typechain/hardhat": "^2.3.1",
     "@types/chai": "^4.3.0",
     "@types/mocha": "^9.1.0",
@@ -31,8 +41,5 @@
     "ts-node": "^10.5.0",
     "typechain": "^5.2.0",
     "typescript": "^4.5.5"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^4.5.0"
   }
 }

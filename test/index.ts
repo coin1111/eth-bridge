@@ -1,24 +1,22 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { OLToken, OLToken__factory } from "../typechain";
+import { OLToken, OLToken__factory as OLTokenFactory } from "../typechain";
 
 describe("BridgeEscrow", function () {
-  let OLToken: OLToken__factory;
+  let OLToken: OLTokenFactory;
   let olToken: OLToken;
   let owner: SignerWithAddress;
   let executorAddr: SignerWithAddress;
   let senderAddr: SignerWithAddress;
   let receiverAddr: SignerWithAddress;
-  let addrs;
   const COIN_SCALING_FACTOR = 1000000;
   const COIN_SUPPLY = 1000;
 
   beforeEach(async function () {
     // Get the ContractFactory and Signers here.
     OLToken = await ethers.getContractFactory("OLToken");
-    [owner, executorAddr, senderAddr, receiverAddr, ...addrs] =
-      await ethers.getSigners();
+    [owner, executorAddr, senderAddr, receiverAddr] = await ethers.getSigners();
 
     olToken = await OLToken.deploy(
       (COIN_SUPPLY * COIN_SCALING_FACTOR).toString()
@@ -59,13 +57,13 @@ describe("BridgeEscrow", function () {
       expect(allowed).to.equal(amount);
 
       // deposit
-      const transfer_id =
+      const transferId =
         "0xeab47fa3a3dc42bc8cbc48c02182669deab47fa3a3dc42bc8cbc48c02182669d";
       const senderBalanceBefore = await olToken.balanceOf(senderAddr.address);
       const contractBalanceBefore = await olToken.balanceOf(escrow.address);
       const depositTx = await escrow
         .connect(senderAddr)
-        .createTransferAccountThis(receiverAddr.address, amount, transfer_id);
+        .createTransferAccountThis(receiverAddr.address, amount, transferId);
       const senderBalanceAfter = await olToken.balanceOf(senderAddr.address);
       expect(
         senderBalanceBefore.toNumber() - senderBalanceAfter.toNumber()
@@ -86,7 +84,7 @@ describe("BridgeEscrow", function () {
           senderAddr.address, // sender
           receiverAddr.address, // receiver
           amount,
-          transfer_id
+          transferId
         );
       const receiverBalanceAfter = await olToken.balanceOf(
         receiverAddr.address
@@ -98,12 +96,12 @@ describe("BridgeEscrow", function () {
       // delete transfer entry on sender's chain
       const deleteTransferAccountTx = await escrow
         .connect(executorAddr)
-        .closeTransferAccountSender(transfer_id);
+        .closeTransferAccountSender(transferId);
 
       // delete transfer entry on receiver's chain
       const deleteUnlockedTx = await escrow
         .connect(executorAddr)
-        .closeTransferAccountReceiver(transfer_id);
+        .closeTransferAccountReceiver(transferId);
     });
   });
 });

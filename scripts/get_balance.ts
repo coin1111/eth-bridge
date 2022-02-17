@@ -6,8 +6,8 @@
 import { ethers } from "hardhat";
 import * as fs from 'fs';
 
-function getConfig():any {
-  let configJson:any = fs.readFileSync(".bridge_escrow.config",'utf8').toString().trimEnd();
+function getConfig(): any {
+  let configJson: any = fs.readFileSync(".bridge_escrow.config", 'utf8').toString().trimEnd();
   return JSON.parse(configJson);
 }
 
@@ -23,12 +23,14 @@ async function main() {
 
   // Check balance
   const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-  const olToken = await ethers.getContractAt("OLToken",olTokenAddr);
+  const olToken = await ethers.getContractAt("OLToken", olTokenAddr);
+  console.log("Todd: ",todd.address);
+  console.log("OlToken: ",olTokenAddr);
   const balance = await olToken.balanceOf(
     todd.address
   );
-  console.log("Balance: ",balance);
-  
+  console.log("Balance: ", balance);
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

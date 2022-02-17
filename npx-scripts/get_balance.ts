@@ -17,19 +17,18 @@ async function main() {
     return;
   }
 
-  let config = getConfig();
-  let olTokenAddr = config.olTokenContract;
-  let bridgeEscrowAddr = config.escrowContract;
-
-
+  // get signers
   let signers = getSigners();
   let user = getAddress(signers, argv);
 
-
+  // get contracts
+  let config = getConfig();
+  let olTokenAddr = config.olTokenContract;
+  let bridgeEscrowAddr = config.escrowContract;
   const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
+  let olToken = ERC20__factory.connect(olTokenAddr, provider);
 
   // Check balance
-  let olToken = ERC20__factory.connect(olTokenAddr, provider);
   console.log("User: ", user);
   console.log("OlToken: ", olTokenAddr);
   const balance = await olToken.balanceOf(

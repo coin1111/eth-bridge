@@ -11,23 +11,17 @@ import { getConfig, getSigners, getSigner } from "./get_signers";
 
 async function main() {
   let argv = process.argv.slice(2);
-  if (argv.length < 3 || argv[0] == "-h" || argv[0] == "--help") {
-    console.log("Usage: withdraw.ts  sender receiver amount");
-    console.log("\t withdraw funds from escrow into receiver for amount");
-    console.log("\t sender - nick or address of depositor");
-    console.log("\t receiver - nick or address of receiver");
+  if (argv.length < 1 || argv[0] == "-h" || argv[0] == "--help") {
+    console.log("Usage: close_transfer.ts <if_sender>");
+    console.log("\t close transfer account for sender (if_sender=true) or receiver");
     console.log("\t nicknames: alice, bob, carol, pete, todd, bridgeEscrow");
     return;
   }
 
-  let sender = argv[0];
-  let receiver = argv[1];
-  let amount = argv[2];
+  let ifSender = argv[0];
 
   // get signers
   let signers = getSigners();
-  let senderWallet = getSigner(signers, sender);
-  let receiverWallet = getSigner(signers, receiver);
   let aliceWallet = getSigner(signers, "alice");
 
   // get contracts
@@ -36,18 +30,21 @@ async function main() {
   const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
   const BridgeEscrow = BridgeEscrow__factory.connect(bridgeEscrowAddr, provider);
 
-  // Withdraw
+  // close
   const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
 
   let signer = aliceWallet.connect(provider);
-  const tx = await BridgeEscrow.connect(signer).withdrawFromEscrowThis(
-    senderWallet.address, // sender
-    receiverWallet.address, // receiver
-    amount,
-    transfer_id,
-
-  );
-  console.log("Withdraw: ", tx);
+  if (ifSender == "true" || ifSender == "1") {
+    const tx = await BridgeEscrow.connect(signer).closeTransferAccountSender(
+      transfer_id
+    );
+    console.log("Close: ", tx);
+  } else {
+    const tx = await BridgeEscrow.connect(signer).closeTransferAccountReceiver(
+      transfer_id
+    );
+    console.log("Close: ", tx);
+  }
 
 }
 

@@ -1,11 +1,11 @@
 # deposit pete to transfer to todd
-npx hardhat run --network localhost scripts/deposit.ts
+npx ts-node  npx-scripts/deposit.ts pete todd 10
 
 # withdraw
-npx hardhat run --network localhost scripts/withdraw.ts
+npx ts-node  npx-scripts/withdraw.ts pete todd 10
 
 # get todd's balance - 10
-npx hardhat run --network localhost scripts/get_balance.ts
+npx ts-node  npx-scripts/get_balance.ts todd
 
 # close transfer accounts
 npx hardhat run --network localhost scripts/close_transfer.ts

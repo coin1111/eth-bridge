@@ -1,13 +1,15 @@
 import { ethers } from "ethers";
 import * as fs from 'fs';
 
-export function getAddress(signers: Map<string, ethers.Wallet>, argv: string[]) {
-  if (!signers.has(argv[0])) {
-    throw new TypeError("ERROR: invalid nick: " + argv[0]);
+export function getSigner(signers: Map<string, ethers.Wallet>, nick: string): ethers.Wallet {
+  if (!signers.has(nick)) {
+    throw new TypeError("ERROR: invalid nick: " + nick);
   }
-  let user = argv[0];
-  if (!user.startsWith("0x")) {
-    user = (signers.get(argv[0]) as ethers.Wallet).address;
+  let user: ethers.Wallet;
+  if (!nick.startsWith("0x")) {
+    user = (signers.get(nick) as ethers.Wallet);
+  } else {
+    user = new ethers.Wallet(nick);
   }
   return user;
 }

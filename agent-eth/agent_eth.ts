@@ -6,7 +6,7 @@ import { BridgeEscrow__factory } from "../typechain/factories/BridgeEscrow__fact
 import { getConfig, getSigners, getSigner } from "../npx-scripts/get_signers";
 import { BridgeEscrow } from "../typechain/BridgeEscrow";
 
-
+const ZERO_TRANFER_ID = "0x00000000000000000000000000000000";
 async function main() {
   let argv = process.argv.slice(2);
   if (argv[0] == "-h" || argv[0] == "--help") {
@@ -30,7 +30,14 @@ async function main() {
   // executor of bridge menthods
   let executor = aliceWallet.connect(provider);
 
-  // Enumerate pending transfer ids
+  while (1) {
+    // Enumerate pending transfer ids
+    await processTranfers(bridgeEscrow, executor);
+    await new Promise(f => setTimeout(f, 5000)); // wait 5 secs
+  }
+}
+
+async function processTranfers(bridgeEscrow: BridgeEscrow, executor: ethers.Wallet) {
   let start = 0;
   let count = 10;
   let lockedLen = (await bridgeEscrow.getLockedLength()).toNumber();
@@ -40,13 +47,14 @@ async function main() {
       count
     );
     console.log("getNextTransferId: ", transferId);
-    // process transfer 
-    processTransfer(transferId, bridgeEscrow, executor);
+    if (transferId != ZERO_TRANFER_ID) {
+      // process transfer 
+      processTransfer(transferId, bridgeEscrow, executor);
+    }
     start = startNext.toNumber();
   }
-  console.log("No more pending transfers")
+  console.log("No more pending transfers");
 }
-
 
 async function processTransfer(transferId: string, bridgeEscrow: BridgeEscrow, executor: ethers.Signer) {
   let accountInfo = await bridgeEscrow.getLockedAccountInfo(

@@ -28,9 +28,9 @@ contract BridgeEscrow {
     }
 
     struct EscrowState {
-        // records of deposits 
+        // records of deposits
         mapping(bytes16 => AccountInfo) locked;
-        // records of withdrawals 
+        // records of withdrawals
         mapping(bytes16 => AccountInfo) unlocked;
         // total balance deposited into contract
         uint64 balance;
@@ -265,6 +265,29 @@ contract BridgeEscrow {
             transfer_id: EMPTY_BYTES,
             locked_idx: 0
         });
+    }
+
+    function getLockedLength() public view returns (uint256) {
+        return escrowState.locked_idxs.length;
+    }
+
+    // returns next non-zero transfer_id
+    function getNextTransferId(uint256 start, uint256 n)
+        public
+        view
+        returns (bytes16, uint256)
+    {
+        uint256 cnt = 0;
+        while (
+            start + cnt < escrowState.locked_idxs.length && cnt < n && cnt < 100
+        ) {
+            bytes16 id = escrowState.locked_idxs[start + cnt];
+            if (id != EMPTY_BYTES) {
+                return (id, start + cnt + 1);
+            }
+            cnt += 1;
+        }
+        return (EMPTY_BYTES, start + cnt);
     }
 
     // to remove funds from contract

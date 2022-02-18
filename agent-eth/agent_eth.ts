@@ -33,7 +33,7 @@ async function main() {
   while (1) {
     // Enumerate pending transfer ids
     await processTranfers(bridgeEscrow, executor);
-    await new Promise(f => setTimeout(f, 5000)); // wait 5 secs
+    await new Promise(f => setTimeout(f, 20000)); // wait 5 secs
   }
 }
 

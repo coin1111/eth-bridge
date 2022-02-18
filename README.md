@@ -29,6 +29,26 @@ npx hardhat test
 ```
 Contract addresses are saved in .escrow_bridge.config 
 
+## Run Demo ETH agent
+This is a depo agent to transfer funds from ETH to ETH. The agent periodically checks pending transfers and processes them
+1. Start local test network and deploy contracts
+```
+./run-local-node.sh
+./deploy-local.sh
+```
+2. start agent
+```
+npx ts-node  agent-eth/agent_eth.ts
+```
+3. Deposit funds
+```
+export transfer_id=0xeab47fa3a3dc42bc8cbc48c02182669d
+npx ts-node  npx-scripts/deposit.ts pete todd 10 "$transfer_id"
+```
+4. Check balance
+```
+npx ts-node  npx-scripts/get_balance.ts todd
+```
 # Advanced Sample Hardhat Project
 
 This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.

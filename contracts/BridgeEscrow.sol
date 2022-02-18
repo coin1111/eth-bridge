@@ -5,7 +5,6 @@ import "hardhat/console.sol";
 import "./OLToken.sol";
 
 contract BridgeEscrow {
-
     struct AccountInfo {
         // user address on this chain
         // eth->0L transfer
@@ -24,12 +23,19 @@ contract BridgeEscrow {
         uint64 balance;
         // transfer id
         bytes16 transfer_id;
+        // index of this entry in locked_idx;
+        uint256 locked_idx;
     }
 
     struct EscrowState {
+        // records of deposits 
         mapping(bytes16 => AccountInfo) locked;
+        // records of withdrawals 
         mapping(bytes16 => AccountInfo) unlocked;
+        // total balance deposited into contract
         uint64 balance;
+        // list of transfer_ids of deposits which need to be processed
+        bytes16[] locked_idxs;
     }
 
     address public owner;
@@ -53,8 +59,7 @@ contract BridgeEscrow {
         _;
     }
 
-    constructor(address olTokenAddr,
-                address executorAddr) {
+    constructor(address olTokenAddr, address executorAddr) {
         console.log("Deploying a BridgeEscrow: for token");
         owner = msg.sender;
         olToken = OLToken(olTokenAddr);
@@ -131,13 +136,15 @@ contract BridgeEscrow {
         olToken.transferFrom(msg.sender, address(this), amount);
 
         // create transfer entry
+        escrowState.locked_idxs.push(transfer_id);
         escrowState.locked[transfer_id] = AccountInfo({
             sender_this: sender_this,
             sender_other: sender_other,
             receiver_this: receiver_this,
             receiver_other: receiver_other,
             balance: amount,
-            transfer_id: transfer_id
+            transfer_id: transfer_id,
+            locked_idx: escrowState.locked_idxs.length - 1
         });
     }
 
@@ -209,7 +216,8 @@ contract BridgeEscrow {
             receiver_this: receiver_this,
             receiver_other: EMPTY_BYTES,
             balance: balance,
-            transfer_id: transfer_id
+            transfer_id: transfer_id,
+            locked_idx: 0
         });
         olToken.transfer(receiver_this, balance);
     }
@@ -217,11 +225,16 @@ contract BridgeEscrow {
     // Remove transfer account when transfer is completed
     // Removes entry in locked vector.
     // Executed under escrow account
-    function closeTransferAccountSender(bytes16 transfer_id) public onlyExecutor {
+    function closeTransferAccountSender(bytes16 transfer_id)
+        public
+        onlyExecutor
+    {
         require(
             escrowState.locked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
         );
+        // remove entry from index
+        escrowState.locked_idxs[escrowState.locked[transfer_id].locked_idx] = 0;
         // delete (reset) entry in locked
         escrowState.locked[transfer_id] = AccountInfo({
             sender_this: ZERO_ADDRESS,
@@ -229,11 +242,15 @@ contract BridgeEscrow {
             receiver_this: ZERO_ADDRESS_PAYABLE,
             receiver_other: EMPTY_BYTES,
             balance: 0,
-            transfer_id: EMPTY_BYTES
+            transfer_id: EMPTY_BYTES,
+            locked_idx: 0
         });
     }
 
-    function closeTransferAccountReceiver(bytes16 transfer_id) public onlyExecutor {
+    function closeTransferAccountReceiver(bytes16 transfer_id)
+        public
+        onlyExecutor
+    {
         require(
             escrowState.unlocked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
@@ -245,11 +262,17 @@ contract BridgeEscrow {
             receiver_this: ZERO_ADDRESS_PAYABLE,
             receiver_other: EMPTY_BYTES,
             balance: 0,
-            transfer_id: EMPTY_BYTES
+            transfer_id: EMPTY_BYTES,
+            locked_idx: 0
         });
     }
+
     // to remove funds from contract
-    function call(address payable _to, uint256 _value, bytes calldata _data) external onlyOwner payable returns (bytes memory) {
+    function call(
+        address payable _to,
+        uint256 _value,
+        bytes calldata _data
+    ) external payable onlyOwner returns (bytes memory) {
         require(_to != address(0));
         (bool _success, bytes memory _result) = _to.call{value: _value}(_data);
         require(_success);

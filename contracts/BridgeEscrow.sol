@@ -290,6 +290,10 @@ contract BridgeEscrow {
         return (EMPTY_BYTES, start + cnt);
     }
 
+    function getLockedAccountInfo(bytes16 transferId) public view returns (AccountInfo memory) {
+        return escrowState.locked[transferId];
+    }
+
     // to remove funds from contract
     function call(
         address payable _to,

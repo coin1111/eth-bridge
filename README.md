@@ -25,7 +25,7 @@ npx hardhat test
 ```
 3. Run contract methods
 ```
-./test-escrow.sh
+./integration-tests/test-escrow.sh
 ```
 Contract addresses are saved in .escrow_bridge.config 
 

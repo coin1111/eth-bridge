@@ -11,11 +11,11 @@ import { getConfig, getSigners, getSigner } from "./get_signers";
 
 async function main() {
   let argv = process.argv.slice(2);
-  if (argv.length < 3 || argv[0] == "-h" || argv[0] == "--help") {
-    console.log("Usage: deposit.ts sender receiver amount");
+  if (argv.length < 4 || argv[0] == "-h" || argv[0] == "--help") {
+    console.log("Usage: deposit.ts <sender> <receiver> <amount> <transfer-id>");
     console.log("\t deposit amount into escrow contract");
     console.log("\t sender - nick or address of depositor");
-    console.log("\t sreceiverender - nick or address of receiver");
+    console.log("\t receiver - nick or address of receiver");
     console.log("\t nicknames: alice, bob, carol, pete, todd, bridgeEscrow");
     return;
   }
@@ -23,6 +23,7 @@ async function main() {
   let sender = argv[0];
   let receiver = argv[1];
   let amount = argv[2];
+  const transfer_id = argv[3];
 
   // get signers
   let signers = getSigners();
@@ -37,9 +38,7 @@ async function main() {
   let olToken = ERC20__factory.connect(olTokenAddr, provider);
   const BridgeEscrow = BridgeEscrow__factory.connect(bridgeEscrowAddr, provider);
 
-  // // Deposit
-  const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-
+  //  Deposit
   let signer = senderWallet.connect(provider);
   await olToken.connect(signer).approve(BridgeEscrow.address, amount);
   const tx = await BridgeEscrow.connect(signer).createTransferAccountThis(

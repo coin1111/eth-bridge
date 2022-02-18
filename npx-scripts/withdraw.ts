@@ -11,8 +11,8 @@ import { getConfig, getSigners, getSigner } from "./get_signers";
 
 async function main() {
   let argv = process.argv.slice(2);
-  if (argv.length < 3 || argv[0] == "-h" || argv[0] == "--help") {
-    console.log("Usage: withdraw.ts  sender receiver amount");
+  if (argv.length < 4 || argv[0] == "-h" || argv[0] == "--help") {
+    console.log("Usage: withdraw.ts  <sender> <receiver> <amount> <transfer-id>");
     console.log("\t withdraw funds from escrow into receiver for amount");
     console.log("\t sender - nick or address of depositor");
     console.log("\t receiver - nick or address of receiver");
@@ -23,6 +23,7 @@ async function main() {
   let sender = argv[0];
   let receiver = argv[1];
   let amount = argv[2];
+  const transfer_id = argv[3];
 
   // get signers
   let signers = getSigners();
@@ -37,8 +38,6 @@ async function main() {
   const BridgeEscrow = BridgeEscrow__factory.connect(bridgeEscrowAddr, provider);
 
   // Withdraw
-  const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-
   let signer = aliceWallet.connect(provider);
   const tx = await BridgeEscrow.connect(signer).withdrawFromEscrowThis(
     senderWallet.address, // sender

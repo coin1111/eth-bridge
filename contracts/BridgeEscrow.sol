@@ -25,6 +25,8 @@ contract BridgeEscrow {
         bytes16 transfer_id;
         // index of this entry in locked_idx;
         uint256 locked_idx;
+        // indicates if this account has been closed
+        bool is_closed;
     }
 
     struct EscrowState {
@@ -144,7 +146,8 @@ contract BridgeEscrow {
             receiver_other: receiver_other,
             balance: amount,
             transfer_id: transfer_id,
-            locked_idx: escrowState.locked_idxs.length - 1
+            locked_idx: escrowState.locked_idxs.length - 1,
+            is_closed: false
         });
     }
 
@@ -217,7 +220,8 @@ contract BridgeEscrow {
             receiver_other: EMPTY_BYTES,
             balance: balance,
             transfer_id: transfer_id,
-            locked_idx: 0
+            locked_idx: 0,
+            is_closed: true // transfer happened, account closed
         });
         olToken.transfer(receiver_this, balance);
     }
@@ -235,16 +239,9 @@ contract BridgeEscrow {
         );
         // remove entry from index
         escrowState.locked_idxs[escrowState.locked[transfer_id].locked_idx] = 0;
-        // delete (reset) entry in locked
-        escrowState.locked[transfer_id] = AccountInfo({
-            sender_this: ZERO_ADDRESS,
-            sender_other: EMPTY_BYTES,
-            receiver_this: ZERO_ADDRESS_PAYABLE,
-            receiver_other: EMPTY_BYTES,
-            balance: 0,
-            transfer_id: EMPTY_BYTES,
-            locked_idx: 0
-        });
+        // close locked entry
+        escrowState.locked[transfer_id].locked_idx = 0;
+        escrowState.locked[transfer_id].is_closed = true;
     }
 
     function closeTransferAccountReceiver(bytes16 transfer_id)
@@ -263,7 +260,8 @@ contract BridgeEscrow {
             receiver_other: EMPTY_BYTES,
             balance: 0,
             transfer_id: EMPTY_BYTES,
-            locked_idx: 0
+            locked_idx: 0,
+            is_closed: false
         });
     }
 
@@ -290,8 +288,20 @@ contract BridgeEscrow {
         return (EMPTY_BYTES, start + cnt);
     }
 
-    function getLockedAccountInfo(bytes16 transferId) public view returns (AccountInfo memory) {
+    function getLockedAccountInfo(bytes16 transferId)
+        public
+        view
+        returns (AccountInfo memory)
+    {
         return escrowState.locked[transferId];
+    }
+
+    function getUnlockedAccountInfo(bytes16 transferId)
+        public
+        view
+        returns (AccountInfo memory)
+    {
+        return escrowState.unlocked[transferId];
     }
 
     // to remove funds from contract

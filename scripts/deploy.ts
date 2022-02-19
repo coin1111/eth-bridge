@@ -8,10 +8,7 @@ import * as fs from 'fs';
 const COIN_SCALING_FACTOR = 1000000;
 const COIN_SUPPLY = 1000;
 
-function getPrivateKey(fName:string) {
-  let a = fs.readFileSync(fName,'utf8').toString().split("\n");
-  return a[1].split(":")[1];
-}
+
 
 async function main() {
   // Deploy ERC20 token contract
@@ -20,14 +17,6 @@ async function main() {
   let olToken = await OLToken.deploy((COIN_SUPPLY * COIN_SCALING_FACTOR).toString());
   await olToken.deployed();
   console.log("0LToken contract:", olToken.address);
-
-  // let ownerKey = getPrivateKey("../accounts/alice.txt");
-  // let executorKey = getPrivateKey("../accounts/bob.txt");
-  // let senderKey = getPrivateKey("../accounts/pete.txt");
-  // let ownerWallet = new ethers.Wallet(ownerKey);
-  // let executorWallet = new ethers.Wallet(executorKey);
-  // let senderWallet = new ethers.Wallet(senderKey);
-  // console.log("owner: ", ownerWallet.address)
 
   let [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] = await ethers.getSigners();
 
@@ -43,13 +32,13 @@ async function main() {
   await olToken.transfer(pete.address, 100);
 
   // save addresses to config
-  let config:any = {
-  olTokenContract: olToken.address,
-  escrowContract:escrow.address
+  let config: any = {
+    olTokenContract: olToken.address,
+    escrowContract: escrow.address
   }
-  fs.writeFile(".bridge_escrow.config", JSON.stringify(config), function(err) {
+  fs.writeFile(".bridge_escrow.config", JSON.stringify(config), function (err) {
     if (err) {
-        console.log(err);
+      console.log(err);
     }
   });
 }

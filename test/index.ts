@@ -15,14 +15,14 @@ describe("BridgeEscrow", function () {
   const COIN_SUPPLY = 1000;
 
   beforeEach(async function () {
-    // Get the ContractFactory and Signers here.
+    // Deploy ERC20 token contract
     OLToken = await ethers.getContractFactory("OLToken");
-    [owner, executorAddr, senderAddr, receiverAddr, ...addrs] = await ethers.getSigners();
 
     olToken = await OLToken.deploy((COIN_SUPPLY * COIN_SCALING_FACTOR).toString());
     await olToken.deployed();
     console.log("0LToken deployed to:", olToken.signer.getAddress());
 
+    [owner, executorAddr, senderAddr, receiverAddr, ...addrs] = await ethers.getSigners();
     const ownerBalance = await olToken.balanceOf(owner.address);
     expect(await olToken.totalSupply()).to.equal(ownerBalance);
 
@@ -76,11 +76,6 @@ describe("BridgeEscrow", function () {
 
       // delete transfer entry on sender's chain
       const deleteTransferAccountTx = await escrow.connect(executorAddr).closeTransferAccountSender(
-        transfer_id
-      );
-
-      // delete transfer entry on receiver's chain
-      const deleteUnlockedTx = await escrow.connect(executorAddr).closeTransferAccountReceiver(
         transfer_id
       );
 

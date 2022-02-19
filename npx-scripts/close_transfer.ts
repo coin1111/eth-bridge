@@ -11,15 +11,14 @@ import { getConfig, getSigners, getSigner } from "./get_signers";
 
 async function main() {
   let argv = process.argv.slice(2);
-  if (argv.length < 2 || argv[0] == "-h" || argv[0] == "--help") {
-    console.log("Usage: close_transfer.ts <if_sender> <transfer-id>");
-    console.log("\t close transfer account for sender (if_sender=true) or receiver");
+  if (argv.length < 1 || argv[0] == "-h" || argv[0] == "--help") {
+    console.log("Usage: close_transfer.ts <transfer-id>");
+    console.log("\t close transfer account ");
     console.log("\t nicknames: alice, bob, carol, pete, todd, bridgeEscrow");
     return;
   }
 
-  let ifSender = argv[0];
-  const transfer_id = argv[1];
+  const transfer_id = argv[0];
 
   // get signers
   let signers = getSigners();
@@ -33,17 +32,11 @@ async function main() {
 
   // close
   let signer = aliceWallet.connect(provider);
-  if (ifSender == "true" || ifSender == "1") {
-    const tx = await BridgeEscrow.connect(signer).closeTransferAccountSender(
-      transfer_id
-    );
-    console.log("Close: ", tx);
-  } else {
-    const tx = await BridgeEscrow.connect(signer).closeTransferAccountReceiver(
-      transfer_id
-    );
-    console.log("Close: ", tx);
-  }
+  const tx = await BridgeEscrow.connect(signer).closeTransferAccountSender(
+    transfer_id
+  );
+  console.log("Close: ", tx);
+
 
 }
 

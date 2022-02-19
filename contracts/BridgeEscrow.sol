@@ -244,27 +244,6 @@ contract BridgeEscrow {
         escrowState.locked[transfer_id].is_closed = true;
     }
 
-    function closeTransferAccountReceiver(bytes16 transfer_id)
-        public
-        onlyExecutor
-    {
-        require(
-            escrowState.unlocked[transfer_id].transfer_id != 0x0,
-            "transfer_id must exist"
-        );
-        // delete (reset) entry in unlocked
-        escrowState.unlocked[transfer_id] = AccountInfo({
-            sender_this: ZERO_ADDRESS,
-            sender_other: EMPTY_BYTES,
-            receiver_this: ZERO_ADDRESS_PAYABLE,
-            receiver_other: EMPTY_BYTES,
-            balance: 0,
-            transfer_id: EMPTY_BYTES,
-            locked_idx: 0,
-            is_closed: false
-        });
-    }
-
     function getLockedLength() public view returns (uint256) {
         return escrowState.locked_idxs.length;
     }

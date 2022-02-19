@@ -6,12 +6,13 @@
 import { ethers } from "hardhat";
 import * as fs from 'fs';
 
-function getConfig():any {
-  let configJson:any = fs.readFileSync(".bridge_escrow.config",'utf8').toString().trimEnd();
+function getConfig(): any {
+  let configJson: any = fs.readFileSync(".bridge_escrow.config", 'utf8').toString().trimEnd();
   return JSON.parse(configJson);
 }
 
-async function main() {;
+async function main() {
+  ;
 
   let config = getConfig();
   let olTokenAddr = config.olTokenContract;
@@ -21,24 +22,17 @@ async function main() {;
   let [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] = await ethers.getSigners();
 
   const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-  const BridgeEscrow = await ethers.getContractAt("BridgeEscrow",bridgeEscrowAddr);
-  const OLToken = await ethers.getContractAt("OLToken",olTokenAddr);
+  const BridgeEscrow = await ethers.getContractAt("BridgeEscrow", bridgeEscrowAddr);
+  const OLToken = await ethers.getContractAt("OLToken", olTokenAddr);
 
 
   const deleteTransferAccountTx = await BridgeEscrow.connect(alice).closeTransferAccountSender(
     transfer_id
   );
 
-  console.log("closeTransferAccountSender: ",deleteTransferAccountTx);
+  console.log("closeTransferAccountSender: ", deleteTransferAccountTx);
 
 
-  // close this chain transfer account
-  const deleteUnlockedTx = await BridgeEscrow.connect(alice).closeTransferAccountReceiver(
-    transfer_id
-  );
-
-  console.log("deleteUnlockedTx: ",deleteUnlockedTx);
-  
 }
 
 // We recommend this pattern to be able to use async/await everywhere

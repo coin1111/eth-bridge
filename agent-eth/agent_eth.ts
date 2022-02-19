@@ -93,9 +93,9 @@ async function processTransfer(transferId: string, bridgeEscrow: BridgeEscrow, e
     console.log("WARN: transfer id mismatch,expect: {}, found: {}", transferId, accountInfo.transfer_id);
     return;
   } else if (accountInfo.is_closed) {
-      // sanity check, account must not be closed
-      console.log("WARN: transfer id is closed, cannot withdraw: {}", transferId,);
-      return;
+    // sanity check, account must not be closed
+    console.log("WARN: transfer id is closed, cannot withdraw: {}", transferId,);
+    return;
   } else {
     // withdraw
     const txWithdraw = await bridgeEscrow.connect(executor).withdrawFromEscrowThis(

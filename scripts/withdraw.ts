@@ -6,12 +6,13 @@
 import { ethers } from "hardhat";
 import * as fs from 'fs';
 
-function getConfig():any {
-  let configJson:any = fs.readFileSync(".bridge_escrow.config",'utf8').toString().trimEnd();
+function getConfig(): any {
+  let configJson: any = fs.readFileSync(".bridge_escrow.config", 'utf8').toString().trimEnd();
   return JSON.parse(configJson);
 }
 
-async function main() {;
+async function main() {
+  ;
 
   let config = getConfig();
   let olTokenAddr = config.olTokenContract;
@@ -23,8 +24,8 @@ async function main() {;
 
   // Withdraw
   const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-  const BridgeEscrow = await ethers.getContractAt("BridgeEscrow",bridgeEscrowAddr);
-  const OLToken = await ethers.getContractAt("OLToken",olTokenAddr);
+  const BridgeEscrow = await ethers.getContractAt("BridgeEscrow", bridgeEscrowAddr);
+  const OLToken = await ethers.getContractAt("OLToken", olTokenAddr);
   let amount = 10;
   const tx = await BridgeEscrow.connect(alice).withdrawFromEscrowThis(
     pete.address, // sender
@@ -32,8 +33,8 @@ async function main() {;
     amount,
     transfer_id
   );
-  console.log("Withdraw: ",tx);
-  
+  console.log("Withdraw: ", tx);
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere

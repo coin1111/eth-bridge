@@ -50,6 +50,11 @@ npx ts-node  npx-scripts/deposit.ts pete todd 10 "$transfer_id"
 ```
 npx ts-node  npx-scripts/get_balance.ts todd
 ```
+## Generate ABI
+```
+yarn run hardhat export-abi
+```
+
 # Advanced Sample Hardhat Project
 
 This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.

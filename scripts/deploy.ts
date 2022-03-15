@@ -34,7 +34,9 @@ async function main() {
   // save addresses to config
   let config: any = {
     olTokenContract: olToken.address,
-    escrowContract: escrow.address
+    escrowContract: escrow.address,
+    url: "http://localhost:8545",
+    gasPrice: 83241151,
   }
   fs.writeFile(".bridge_escrow.config", JSON.stringify(config), function (err) {
     if (err) {

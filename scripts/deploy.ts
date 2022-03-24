@@ -31,6 +31,9 @@ async function main() {
   // Transfer 100 tokens from owner to pete
   await olToken.transfer(pete.address, 100);
 
+  // Transfer 1000000 tokens from owner to escrow account
+  await olToken.transfer(escrow.address, 1000000);
+
   // save addresses to config
   let config: any = {
     olTokenContract: olToken.address,

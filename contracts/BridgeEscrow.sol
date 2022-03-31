@@ -100,7 +100,7 @@ contract BridgeEscrow {
         bytes16 transfer_id
     ) public payable {
         createTransferAccountAux(
-            ZERO_ADDRESS,
+            msg.sender,
             EMPTY_BYTES,
             ZERO_ADDRESS_PAYABLE,
             receiver_address,

@@ -19,7 +19,7 @@ async function main() {
 
   // get signers
   let signers = getSigners();
-  let user = getSigner(signers, argv[0]);
+
 
   // get contracts
   let config = getConfig();
@@ -27,14 +27,23 @@ async function main() {
   let bridgeEscrowAddr = config.escrowContract;
   const provider = new ethers.providers.JsonRpcProvider("http://localhost:8545");
   let olToken = ERC20__factory.connect(olTokenAddr, provider);
+  console.log("OlToken: ", olTokenAddr);
 
   // Check balance
-  console.log("User: ", user);
-  console.log("OlToken: ", olTokenAddr);
-  const balance = await olToken.balanceOf(
-    user.address
-  );
-  console.log("Balance: ", balance);
+  if (argv[0].startsWith("0x")){
+    console.log("User: ", argv[0]);
+    const balance = await olToken.balanceOf(
+      argv[0]
+    );
+    console.log("Balance: ", balance);
+  } else {
+    let user = getSigner(signers, argv[0]);
+    console.log("User: ", user);
+    const balance = await olToken.balanceOf(
+      user.address
+    );
+    console.log("Balance: ", balance);
+  }
 
 }
 

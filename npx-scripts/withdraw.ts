@@ -27,9 +27,16 @@ async function main() {
 
   // get signers
   let signers = getSigners();
-  let senderWallet = getSigner(signers, sender);
   let receiverWallet = getSigner(signers, receiver);
   let aliceWallet = getSigner(signers, "alice");
+  if (!sender.startsWith("0x")) {
+    throw Error("ERROR: sender address must start with 0x");
+  }
+
+  sender = sender.substring(2);
+  let sender_addr = hexStringToByteArray(sender);
+  console.log("sender address:",sender);
+
 
   // get contracts
   let config = getConfig();
@@ -39,8 +46,8 @@ async function main() {
 
   // Withdraw
   let signer = aliceWallet.connect(provider);
-  const tx = await BridgeEscrow.connect(signer).withdrawFromEscrowThis(
-    senderWallet.address, // sender
+  const tx = await BridgeEscrow.connect(signer).withdrawFromEscrow(
+    sender_addr, // sender
     receiverWallet.address, // receiver
     amount,
     transfer_id,
@@ -56,5 +63,17 @@ main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
+
+function hexStringToByteArray(hexString:String):Uint8Array {
+  if (hexString.length % 2 !== 0) {
+      throw "Must have an even number of hex digits to convert to bytes";
+  }
+  var numBytes = hexString.length / 2;
+  var byteArray = new Uint8Array(numBytes);
+  for (var i=0; i<numBytes; i++) {
+      byteArray[i] = parseInt(hexString.substr(i*2, 2), 16);
+  }
+  return byteArray;
+}
 
 

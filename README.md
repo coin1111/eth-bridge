@@ -40,14 +40,18 @@ This is a depo agent to transfer funds from ETH to ETH. The agent periodically c
 ./run-local-node.sh
 ./deploy-local.sh
 ```
-2. start agent
+2. run integration tests
 ```
-npx ts-node  agent-eth/agent_eth.ts
+cd integration-tests
+./test-escrow.sh
+# inspect output
 ```
+
 3. Deposit funds
 ```
+# receiver address on 0: chain: 0x06505CCD81E562B524D8F656ABD92A15
 export transfer_id=0xeab47fa3a3dc42bc8cbc48c02182669d
-npx ts-node  npx-scripts/deposit.ts pete todd 10 "$transfer_id"
+npx ts-node  npx-scripts/deposit.ts pete 0x06505CCD81E562B524D8F656ABD92A15 10 "$transfer_id"
 ```
 4. Check balance
 ```
@@ -60,5 +64,9 @@ yarn run hardhat export-abi
 
 Abis can be hound under abi directory
 
-## User Accounts
-Test users accounts are under accounts directory
+## Project Structure
+* abi - abis for bridge contract
+* accounts- ETH accounts used for dev and testing
+* contracts - bridge ans 0LToken contracts
+* integration-tests - end-to-end tests
+* npx-scripts - cli scripts to manage bridge contract

@@ -16,7 +16,7 @@ async function main() {
     console.log("Usage: deposit.ts <sender> <receiver> <amount> [<transfer-id>]");
     console.log("\t deposit amount into escrow contract");
     console.log("\t sender - nick or address of depositor");
-    console.log("\t receiver - nick or address of receiver");
+    console.log("\t receiver - address of receiver");
     console.log("\t nicknames: alice, bob, carol, pete, todd, bridgeEscrow");
     return;
   }
@@ -43,32 +43,23 @@ async function main() {
     let olToken = ERC20__factory.connect(olTokenAddr, provider);
     const BridgeEscrow = BridgeEscrow__factory.connect(bridgeEscrowAddr, provider);
 
-  if (receiver.startsWith("0x")) {
-    receiver = receiver.substring(2);
-    let receiver_addr = hexStringToByteArray(receiver);
-    console.log("Receiver address:",receiver)
-    //  Deposit
-    let signer = senderWallet.connect(provider);
-    await olToken.connect(signer).approve(BridgeEscrow.address, amount);
-    const tx = await BridgeEscrow.connect(signer).createTransferAccount(
-      receiver_addr,
-      amount,
-      transfer_id
-    );
-    console.log("Deposit: ", tx);
-
-  } else {
-    let receiverWallet = getSigner(signers, receiver);
-    //  Deposit
-    let signer = senderWallet.connect(provider);
-    await olToken.connect(signer).approve(BridgeEscrow.address, amount);
-    const tx = await BridgeEscrow.connect(signer).createTransferAccountThis(
-      receiverWallet.address,
-      amount,
-      transfer_id
-    );
-    console.log("Deposit: ", tx);
+  if (!receiver.startsWith("0x")) {
+    throw Error("receiver must start with 0x")
   }
+
+  receiver = receiver.substring(2);
+  let receiver_addr = hexStringToByteArray(receiver);
+  console.log("Receiver address:",receiver)
+  //  Deposit
+  let signer = senderWallet.connect(provider);
+  await olToken.connect(signer).approve(BridgeEscrow.address, amount);
+  const tx = await BridgeEscrow.connect(signer).createTransferAccount(
+    receiver_addr,
+    amount,
+    transfer_id
+  );
+  console.log("Deposit: ", tx);
+
 
 }
 

@@ -1,8 +1,9 @@
 # test that basic transfer works
-transfer_id=0xeab47fa3a3dc42bc8cbc48c02182669d
+uuid=$(echo $(uuidgen) | sed s/-//g)
+transfer_id=0x"$uuid"
 pushd ..
 # deposit pete to transfer to todd
-npx ts-node  npx-scripts/deposit.ts pete 0x06505CCD81E562B524D8F656ABD92A1510 "$transfer_id"
+npx ts-node  npx-scripts/deposit.ts pete 0x06505CCD81E562B524D8F656ABD92A15 10 "$transfer_id"
 
 # withdraw
 npx ts-node  npx-scripts/withdraw.ts 0x06505CCD81E562B524D8F656ABD92A15 todd 10 "$transfer_id"

@@ -71,30 +71,61 @@ describe("BridgeEscrowMultisig", function () {
       let ai_locked = await escrow.getLockedAccountInfo(transfer_id_dep);
       expect(ai_locked.is_closed).to.equal(false);
 
-      // delete transfer entry on sender's chain
+      // delete transfer entry on sender's chain using executorAddr
       const deleteTransferAccountTx = await escrow.connect(executorAddr).closeTransferAccountSender(
         transfer_id_dep
       );
       console.log("deleteTransferAccountTx: "+deleteTransferAccountTx);
 
+
       let ai = await escrow.getLockedAccountInfo(transfer_id_dep);
+      console.log("ai: "+ai);
+      expect(ai.is_closed).to.equal(false);
+
+      // delete transfer entry on sender's chain using executorAddr1
+      const deleteTransferAccountTx1 = await escrow.connect(executorAddr1).closeTransferAccountSender(
+        transfer_id_dep
+      );
+      console.log("deleteTransferAccountTx1: "+deleteTransferAccountTx1);
+
+      ai = await escrow.getLockedAccountInfo(transfer_id_dep);
+      console.log("ai: "+ai);
       expect(ai.is_closed).to.equal(true);
 
-    //   // withdraw
+      // withdraw
       const transfer_id_w = "0xeab47fa3a3dc42bc8cbc48c02182669a";
       let receiverBalanceBefore = await olToken.balanceOf(receiverAddr.address);
       let sender_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
+
+      // call using executorAddr
       const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrow(
         sender_addr, // sender
         receiverAddr.address, // receiver
         amount,
         transfer_id_w
       );
+      ai = await escrow.getUnlockedAccountInfo(transfer_id_w);
+      console.log("ai: "+ai);
+      expect(ai.is_closed).to.equal(false); // transfer is pending
+
+      let receiverBalanceAfter1 = await olToken.balanceOf(receiverAddr.address);
+      expect(receiverBalanceAfter1.toNumber()-receiverBalanceBefore.toNumber()).to.equal(0);
+
+      // call using executorAddr1
+      const withdrawTx1 = await escrow.connect(executorAddr1).withdrawFromEscrow(
+        sender_addr, // sender
+        receiverAddr.address, // receiver
+        amount,
+        transfer_id_w
+      );
+      ai = await escrow.getUnlockedAccountInfo(transfer_id_w);
+      console.log("ai: "+ai);
+      expect(ai.is_closed).to.equal(true); // transfer is completed
+
+
       let receiverBalanceAfter = await olToken.balanceOf(receiverAddr.address);
       expect(receiverBalanceAfter.toNumber()-receiverBalanceBefore.toNumber()).to.equal(amount);
 
-      let ai_w = await escrow.getUnlockedAccountInfo(transfer_id_w);
-      expect(ai_w.is_closed).to.equal(true);
 
     });
   });

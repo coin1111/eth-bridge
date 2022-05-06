@@ -153,23 +153,42 @@ contract BridgeEscrowMultisig {
             sender_other != EMPTY_BYTES,
             "sender must be a valid address"
         );
-        // check if transfer_id is present
-        require(
-            escrowState.unlocked[transfer_id].transfer_id == 0x0,
-            "transfer_id exists"
-        );
-        escrowState.unlocked[transfer_id] = AccountInfo({
-            sender_this: ZERO_ADDRESS,
-            sender_other: sender_other,
-            receiver_this: receiver_this,
-            receiver_other: EMPTY_BYTES,
-            balance: balance,
-            transfer_id: transfer_id,
-            locked_idx: 0,
-            is_closed: true, // transfer happened, account closed
-            votes: new address[](minVotesRequired),
-            currentVotes: 0
-        });
+        // if this is the first call init transfer entry
+        AccountInfo storage ai_unlocked;
+        if (escrowState.unlocked[transfer_id].currentVotes == 0) {
+            escrowState.unlocked[transfer_id] = AccountInfo({
+                sender_this: ZERO_ADDRESS,
+                sender_other: sender_other,
+                receiver_this: receiver_this,
+                receiver_other: EMPTY_BYTES,
+                balance: balance,
+                transfer_id: transfer_id,
+                locked_idx: 0,
+                is_closed: false, // transfer is pending
+                votes: new address[](minVotesRequired),
+                currentVotes: 0
+            });
+            ai_unlocked = escrowState.unlocked[transfer_id];
+        } else {
+            // make sure that voter call params matches other voters
+            ai_unlocked = escrowState.unlocked[transfer_id];
+            require(
+                ai_unlocked.sender_other == sender_other &&
+                ai_unlocked.receiver_this == receiver_this &&
+                ai_unlocked.balance == balance,
+                "invalid withdraw parameters");
+        }
+
+        // update vote count
+        // if not enough votes, then return
+        if (updateVotes(ai_unlocked, msg.sender) == false) {
+            return;
+        }
+
+
+        // enough votes have been cast, do withdrawal
+        ai_unlocked.is_closed = true; // transfer happened, close transfer
+        // transfer funds to receiver
         olToken.transfer(receiver_this, balance);
     }
 

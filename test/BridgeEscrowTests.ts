@@ -49,13 +49,14 @@ describe("BridgeEscrow", function () {
       expect(allowed).to.equal(amount);
 
       // deposit
-      const transfer_id = "0xeab47fa3a3dc42bc8cbc48c02182669d";
+      const transfer_id_dep = "0xeab47fa3a3dc42bc8cbc48c02182669d";
       let senderBalanceBefore = await olToken.balanceOf(senderAddr.address);
       let contractBalanceBefore = await olToken.balanceOf(escrow.address);
-      const depositTx = await escrow.connect(senderAddr).createTransferAccountThis(
-        receiverAddr.address,
+      let receiver_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
+      const depositTx = await escrow.connect(senderAddr).createTransferAccount(
+        receiver_addr,
         amount,
-        transfer_id
+        transfer_id_dep
       );
       let senderBalanceAfter = await olToken.balanceOf(senderAddr.address);
       expect(senderBalanceBefore.toNumber()-senderBalanceAfter.toNumber()).to.equal(amount);
@@ -63,23 +64,48 @@ describe("BridgeEscrow", function () {
       let contractBalanceAfter = await olToken.balanceOf(escrow.address);
       expect(contractBalanceAfter.toNumber()-contractBalanceBefore.toNumber()).to.equal(amount);
 
-      // withdraw
+      // account is locked
+      let ai_locked = await escrow.getLockedAccountInfo(transfer_id_dep);
+      expect(ai_locked.is_closed).to.equal(false);
+
+      // delete transfer entry on sender's chain
+      const deleteTransferAccountTx = await escrow.connect(executorAddr).closeTransferAccountSender(
+        transfer_id_dep
+      );
+      console.log("deleteTransferAccountTx: "+deleteTransferAccountTx);
+
+      let ai = await escrow.getLockedAccountInfo(transfer_id_dep);
+      expect(ai.is_closed).to.equal(true);
+
+    //   // withdraw
+      const transfer_id_w = "0xeab47fa3a3dc42bc8cbc48c02182669a";
       let receiverBalanceBefore = await olToken.balanceOf(receiverAddr.address);
-      const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrowThis(
-        senderAddr.address, // sender
+      let sender_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
+      const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrow(
+        sender_addr, // sender
         receiverAddr.address, // receiver
         amount,
-        transfer_id
+        transfer_id_w
       );
       let receiverBalanceAfter = await olToken.balanceOf(receiverAddr.address);
       expect(receiverBalanceAfter.toNumber()-receiverBalanceBefore.toNumber()).to.equal(amount);
 
-      // delete transfer entry on sender's chain
-      const deleteTransferAccountTx = await escrow.connect(executorAddr).closeTransferAccountSender(
-        transfer_id
-      );
+      let ai_w = await escrow.getUnlockedAccountInfo(transfer_id_w);
+      expect(ai_w.is_closed).to.equal(true);
 
     });
   });
 });
+
+function hexStringToByteArray(hexString:String):Uint8Array {
+  if (hexString.length % 2 !== 0) {
+      throw "Must have an even number of hex digits to convert to bytes";
+  }
+  var numBytes = hexString.length / 2;
+  var byteArray = new Uint8Array(numBytes);
+  for (var i=0; i<numBytes; i++) {
+      byteArray[i] = parseInt(hexString.substr(i*2, 2), 16);
+  }
+  return byteArray;
+}
 

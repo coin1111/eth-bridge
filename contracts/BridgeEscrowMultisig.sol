@@ -27,6 +27,9 @@ contract BridgeEscrowMultisig {
         uint256 locked_idx;
         // indicates if this account has been closed
         bool is_closed;
+        // votes
+        address[] votes;
+        uint8 currentVotes;
     }
 
     struct EscrowState {
@@ -42,7 +45,8 @@ contract BridgeEscrowMultisig {
 
     address public owner;
     mapping(address => bool) public executors; // allowed executors
-    uint8 public minSignaturesRequired; // min signatures required to execute contract methods
+    uint8 public minVotesRequired; // min signatures required to execute contract methods
+    uint8 public totalExecutors;
     IERC20 private olToken;
 
     address payable ZERO_ADDRESS_PAYABLE =
@@ -62,20 +66,27 @@ contract BridgeEscrowMultisig {
         _;
     }
 
-    constructor(address olTokenAddr, address[] memory allowedExecutors, uint8 minSignatures) {
+    constructor(address olTokenAddr, address[] memory allowedExecutors, uint8 minVotes) {
         console.log("Deploying a BridgeEscrow: for token");
         owner = msg.sender;
         olToken = OLToken(olTokenAddr);
 
         // multisig init
-        require(allowedExecutors.length >= minSignatures,
+        require(minVotes < 256,
+            "MinVotes must be less than 256");
+
+        require(allowedExecutors.length < 256,
+            "Number of allowed executors must be less than 256");
+
+        require(allowedExecutors.length >= minVotes,
             "Number of signers allowed must be at least minSignatures");
 
         for (uint8 i = 0; i < allowedExecutors.length; i++) {
             require(allowedExecutors[i] != address(0), "Invalid signer");
             executors[allowedExecutors[i]] = true;
         }
-        minSignaturesRequired = minSignatures;
+        totalExecutors = uint8(allowedExecutors.length);
+        minVotesRequired = minVotes;
     }
 
     // Creates an account for transfer between ETH->0L accounts
@@ -115,7 +126,9 @@ contract BridgeEscrowMultisig {
             balance: amount,
             transfer_id: transfer_id,
             locked_idx: escrowState.locked_idxs.length - 1,
-            is_closed: false
+            is_closed: false,
+            votes: new address[](minVotesRequired),
+            currentVotes: 0
         });
     }
 
@@ -153,7 +166,9 @@ contract BridgeEscrowMultisig {
             balance: balance,
             transfer_id: transfer_id,
             locked_idx: 0,
-            is_closed: true // transfer happened, account closed
+            is_closed: true, // transfer happened, account closed
+            votes: new address[](minVotesRequired),
+            currentVotes: 0
         });
         olToken.transfer(receiver_this, balance);
     }
@@ -169,15 +184,46 @@ contract BridgeEscrowMultisig {
             escrowState.locked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
         );
+        // if there is already enough votes , then nothing to do
+        AccountInfo storage ai_locked = escrowState.locked[transfer_id];
+        if (updateVotes(ai_locked, msg.sender) == false) {
+            return;
+        }
+
+        // collected enough votes, execute
         // remove entry from index
-        escrowState.locked_idxs[escrowState.locked[transfer_id].locked_idx] = 0;
+        escrowState.locked_idxs[ai_locked.locked_idx] = 0;
         // close locked entry
-        escrowState.locked[transfer_id].locked_idx = 0;
-        escrowState.locked[transfer_id].is_closed = true;
+        ai_locked.locked_idx = 0;
+        ai_locked.is_closed = true;
     }
 
     function getLockedLength() public view returns (uint256) {
         return escrowState.locked_idxs.length;
+    }
+
+    function updateVotes(AccountInfo storage ai, address voter) 
+        private
+        returns (bool) {
+        if (ai.currentVotes >= minVotesRequired) {
+            return false;
+        }
+        // check if sender already voted
+        for (uint8 i = 0; i < ai.currentVotes; i++) {
+            if (ai.votes[i] == voter) {
+                // sender already voted, nothing to do
+                return false;
+            }
+        }
+        // add voter
+        ai.votes[ai.currentVotes] = voter;
+        ai.currentVotes +=1;
+
+        // if not enough votes, then return
+        if (ai.currentVotes < minVotesRequired) {
+            return false;
+        }
+        return true;
     }
 
     // returns next non-zero transfer_id

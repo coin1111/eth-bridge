@@ -57,7 +57,7 @@ contract BridgeEscrowMultisig {
     EscrowState private escrowState;
 
     modifier onlyExecutor() {
-        require(executors[msg.sender]);
+        require(executors[msg.sender], "not executor");
         _;
     }
 

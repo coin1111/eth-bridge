@@ -12,6 +12,7 @@ describe("BridgeEscrowMultisig", function () {
   let executorAddr2: SignerWithAddress;
   let senderAddr: SignerWithAddress;
   let receiverAddr: SignerWithAddress;
+  let nonExecutor: SignerWithAddress;
   let addrs;
   const COIN_SCALING_FACTOR = 1000000;
   const COIN_SUPPLY = 1000;
@@ -24,7 +25,7 @@ describe("BridgeEscrowMultisig", function () {
     await olToken.deployed();
     console.log("0LToken deployed to:", olToken.signer.getAddress());
 
-    [owner, executorAddr, senderAddr, receiverAddr, executorAddr1, executorAddr2, ...addrs] = await ethers.getSigners();
+    [owner, executorAddr, senderAddr, receiverAddr, executorAddr1, executorAddr2, nonExecutor, ...addrs] = await ethers.getSigners();
     const ownerBalance = await olToken.balanceOf(owner.address);
     expect(await olToken.totalSupply()).to.equal(ownerBalance);
 
@@ -65,7 +66,7 @@ describe("BridgeEscrowMultisig", function () {
       let sender_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
 
       // call using executorAddr
-      const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrow(
+      await escrow.connect(executorAddr).withdrawFromEscrow(
         sender_addr, // sender
         receiverAddr.address, // receiver
         amount,
@@ -79,7 +80,7 @@ describe("BridgeEscrowMultisig", function () {
       expect(receiverBalanceAfter1.toNumber() - receiverBalanceBefore.toNumber()).to.equal(0);
 
       // call using executorAddr1
-      const withdrawTx1 = await escrow.connect(executorAddr1).withdrawFromEscrow(
+      await escrow.connect(executorAddr1).withdrawFromEscrow(
         sender_addr, // sender
         receiverAddr.address, // receiver
         amount,
@@ -111,6 +112,42 @@ describe("BridgeEscrowMultisig", function () {
 
     });
   });
+  describe("BridgeEscrowWithdrawNonExecutor", function () {
+    it("Should not be able to withdraw if non executor", async function () {
+
+      const BridgeEscrowMultisig = await ethers.getContractFactory("BridgeEscrowMultisig");
+      const allowedExecutors = [executorAddr.address, executorAddr1.address, executorAddr2.address];
+      const escrow = await BridgeEscrowMultisig.deploy(olToken.address, allowedExecutors, 2);
+      await escrow.deployed();
+
+      // approve transfer
+      let amount = 10;
+      console.log("Sender balance: ", await olToken.balanceOf(senderAddr.address), senderAddr.address);
+      await olToken.connect(senderAddr).approve(escrow.address, amount);
+      let allowed = await olToken.allowance(senderAddr.address, escrow.address);
+      expect(allowed).to.equal(amount);
+
+      // fund escrow
+      let contractBalanceBefore = await olToken.balanceOf(escrow.address);
+      await olToken.connect(senderAddr).transfer(escrow.address, 100);
+
+      let contractBalanceAfter = await olToken.balanceOf(escrow.address);
+      expect(contractBalanceAfter.toNumber() - contractBalanceBefore.toNumber()).to.equal(100);
+
+      // withdraw
+      const transfer_id_w = "0xeab47fa3a3dc42bc8cbc48c02182669a";
+      let sender_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
+
+      // call using non executor
+      await expect(escrow.connect(nonExecutor).withdrawFromEscrow(
+        sender_addr, // sender
+        receiverAddr.address, // receiver
+        amount,
+        transfer_id_w
+      )).to.be.revertedWith("not executor");
+    });
+  });
+
 });
 
 

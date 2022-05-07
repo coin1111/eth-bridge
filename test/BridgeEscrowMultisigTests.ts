@@ -91,6 +91,16 @@ describe("BridgeEscrowMultisig", function () {
       ai = await escrow.getLockedAccountInfo(transfer_id_dep);
       console.log("ai: " + ai);
       expect(ai.is_closed).to.equal(true);
+
+      // call closeTransferAccountSender 3rd time, but it is no-op
+      const deleteTransferAccountTx2 = await escrow.connect(executorAddr2).closeTransferAccountSender(
+        transfer_id_dep
+      );
+      console.log("deleteTransferAccountTx1: " + deleteTransferAccountTx2);
+
+      ai = await escrow.getLockedAccountInfo(transfer_id_dep);
+      console.log("ai: " + ai);
+      expect(ai.is_closed).to.equal(true);
     });
   });
 
@@ -150,6 +160,21 @@ describe("BridgeEscrowMultisig", function () {
       let receiverBalanceAfter = await olToken.balanceOf(receiverAddr.address);
       expect(receiverBalanceAfter.toNumber() - receiverBalanceBefore.toNumber()).to.equal(amount);
 
+      // calling withdraw 3rd time is no-op
+      let escrowBalanceBefore = await olToken.balanceOf(escrow.address);
+      await expect( escrow.connect(executorAddr2).withdrawFromEscrow(
+        sender_addr, // sender
+        receiverAddr.address, // receiver
+        amount,
+        transfer_id_w
+      )).to.be.revertedWith('transfer has been completed already');
+
+      ai = await escrow.getUnlockedAccountInfo(transfer_id_w);
+      console.log("ai: " + ai);
+      expect(ai.is_closed).to.equal(true); // transfer is completed
+
+      let escrowBalanceAfter = await olToken.balanceOf(escrow.address);
+      expect(escrowBalanceBefore == escrowBalanceAfter)
 
     });
   });

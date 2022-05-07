@@ -170,8 +170,11 @@ contract BridgeEscrowMultisig {
             });
             ai_unlocked = escrowState.unlocked[transfer_id];
         } else {
-            // make sure that voter call params matches other voters
             ai_unlocked = escrowState.unlocked[transfer_id];
+            // make sure account is not closed
+            require(ai_unlocked.is_closed == false,
+                "transfer has been completed already");
+            // make sure that voter call params matches other voters
             require(
                 ai_unlocked.sender_other == sender_other &&
                 ai_unlocked.receiver_this == receiver_this &&

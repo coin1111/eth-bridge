@@ -206,6 +206,12 @@ contract BridgeEscrowMultisig {
             escrowState.locked[transfer_id].transfer_id != 0x0,
             "transfer_id must exist"
         );
+
+        require(
+            escrowState.locked[transfer_id].is_closed == false,
+            "transfer is completed already"
+        );
+
         // if there is already enough votes , then nothing to do
         AccountInfo storage ai_locked = escrowState.locked[transfer_id];
         if (updateVotes(ai_locked, msg.sender) == false) {

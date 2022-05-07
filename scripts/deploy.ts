@@ -22,9 +22,9 @@ async function main() {
 
 
   // Deploy BridgeEscrow contract
-  const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
+  const BridgeEscrow = await ethers.getContractFactory("BridgeEscrowMultisig");
   const escrow = await BridgeEscrow.connect(bridgeEscrow)
-    .deploy(olToken.address, alice.address);
+    .deploy(olToken.address, [alice.address], 1);
   await escrow.deployed();
   console.log("BridgeEscrow contract:", escrow.address);
 

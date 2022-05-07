@@ -188,7 +188,6 @@ contract BridgeEscrowMultisig {
             return;
         }
 
-
         // enough votes have been cast, do withdrawal
         ai_unlocked.is_closed = true; // transfer happened, close transfer
         // transfer funds to receiver
@@ -234,13 +233,12 @@ contract BridgeEscrowMultisig {
         private
         returns (bool) {
         if (ai.currentVotes >= minVotesRequired) {
-            return false;
+            require(false, "min votes reached");
         }
         // check if sender already voted
         for (uint8 i = 0; i < ai.currentVotes; i++) {
             if (ai.votes[i] == voter) {
-                // sender already voted, nothing to do
-                return false;
+                require(false, "sender already voted");
             }
         }
         // add voter

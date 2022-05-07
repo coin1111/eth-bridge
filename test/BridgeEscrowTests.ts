@@ -35,7 +35,7 @@ describe("BridgeEscrow", function () {
   });
 
   describe("BridgeEscrowDepositWithdraw", function () {
-    it("Should transfer between senderAddr and receiverAddr", async function () {
+    it("Should be ab le to deposit and withdraw", async function () {
 
       const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
       const escrow = await BridgeEscrow.deploy(olToken.address, executorAddr.address);

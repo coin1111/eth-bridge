@@ -77,10 +77,20 @@ describe("BridgeEscrowMultisig", function () {
       );
       console.log("deleteTransferAccountTx: " + deleteTransferAccountTx);
 
-
       let ai = await escrow.getLockedAccountInfo(transfer_id_dep);
       console.log("ai: " + ai);
       expect(ai.is_closed).to.equal(false);
+      expect(ai.currentVotes).to.equal(1);
+
+      // delete transfer entry on sender's chain using executorAddr, revert
+      await expect(escrow.connect(executorAddr).closeTransferAccountSender(
+        transfer_id_dep
+      )).to.be.revertedWith("sender already voted");
+      
+      ai = await escrow.getLockedAccountInfo(transfer_id_dep);
+      console.log("after calling by the same caller again ai: " + ai);
+      expect(ai.is_closed).to.equal(false);
+      expect(ai.currentVotes).to.equal(1);
 
       // delete transfer entry on sender's chain using executorAddr1
       const deleteTransferAccountTx1 = await escrow.connect(executorAddr1).closeTransferAccountSender(
@@ -91,6 +101,7 @@ describe("BridgeEscrowMultisig", function () {
       ai = await escrow.getLockedAccountInfo(transfer_id_dep);
       console.log("ai: " + ai);
       expect(ai.is_closed).to.equal(true);
+      expect(ai.currentVotes).to.equal(2);
 
       // call closeTransferAccountSender 3rd time, but fail, since it is closed
       await expect(escrow.connect(executorAddr2).closeTransferAccountSender(

@@ -79,6 +79,14 @@ describe("BridgeEscrowMultisig", function () {
       let receiverBalanceAfter1 = await olToken.balanceOf(receiverAddr.address);
       expect(receiverBalanceAfter1.toNumber() - receiverBalanceBefore.toNumber()).to.equal(0);
 
+      // call withdraw again using executorAddr, revert
+      await expect(escrow.connect(executorAddr).withdrawFromEscrow(
+        sender_addr, // sender
+        receiverAddr.address, // receiver
+        amount,
+        transfer_id_w
+      )).to.be.revertedWith("sender already voted");
+
       // call using executorAddr1
       await escrow.connect(executorAddr1).withdrawFromEscrow(
         sender_addr, // sender

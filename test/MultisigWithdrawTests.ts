@@ -1,3 +1,6 @@
+// Withdraw tests for bridge multisig contract
+// use 2 out of 3 possible signers
+
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";

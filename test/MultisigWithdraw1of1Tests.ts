@@ -1,11 +1,12 @@
-// Deposit/withdraw tests for simple bridge contract
+// Withdraw tests for bridge multisig contract
+// use 1 out of 1 possible signers
 
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { OLToken, OLToken__factory } from "../typechain";
 
-describe("BridgeEscrow", function () {
+describe("BridgeEscrowMultisig", function () {
   let OLToken: OLToken__factory;
   let olToken: OLToken;
   let owner: SignerWithAddress;
@@ -36,11 +37,13 @@ describe("BridgeEscrow", function () {
 
   });
 
-  describe("BridgeEscrowDepositWithdraw", function () {
-    it("Should be ab le to deposit and withdraw", async function () {
 
-      const BridgeEscrow = await ethers.getContractFactory("BridgeEscrow");
-      const escrow = await BridgeEscrow.deploy(olToken.address, executorAddr.address);
+  describe("BridgeEscrowWithdraw", function () {
+    it("Should be able to withdraw", async function () {
+
+      const BridgeEscrowMultisig = await ethers.getContractFactory("BridgeEscrowMultisig");
+      const allowedExecutors = [executorAddr.address];
+      const escrow = await BridgeEscrowMultisig.deploy(olToken.address, allowedExecutors, 1);
       await escrow.deployed();
 
       // approve transfer
@@ -50,63 +53,54 @@ describe("BridgeEscrow", function () {
       let allowed = await olToken.allowance(senderAddr.address, escrow.address);
       expect(allowed).to.equal(amount);
 
-      // deposit
-      const transfer_id_dep = "0xeab47fa3a3dc42bc8cbc48c02182669d";
-      let senderBalanceBefore = await olToken.balanceOf(senderAddr.address);
+      // fund escrow
       let contractBalanceBefore = await olToken.balanceOf(escrow.address);
-      let receiver_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
-      const depositTx = await escrow.connect(senderAddr).createTransferAccount(
-        receiver_addr,
-        amount,
-        transfer_id_dep
-      );
-      let senderBalanceAfter = await olToken.balanceOf(senderAddr.address);
-      expect(senderBalanceBefore.toNumber()-senderBalanceAfter.toNumber()).to.equal(amount);
+      await olToken.connect(senderAddr).transfer(escrow.address, 100);
 
       let contractBalanceAfter = await olToken.balanceOf(escrow.address);
-      expect(contractBalanceAfter.toNumber()-contractBalanceBefore.toNumber()).to.equal(amount);
+      expect(contractBalanceAfter.toNumber() - contractBalanceBefore.toNumber()).to.equal(100);
 
-      // account is locked
-      let ai_locked = await escrow.getLockedAccountInfo(transfer_id_dep);
-      expect(ai_locked.is_closed).to.equal(false);
-
-      // delete transfer entry on sender's chain
-      const deleteTransferAccountTx = await escrow.connect(executorAddr).closeTransferAccountSender(
-        transfer_id_dep
-      );
-      console.log("deleteTransferAccountTx: "+deleteTransferAccountTx);
-
-      let ai = await escrow.getLockedAccountInfo(transfer_id_dep);
-      expect(ai.is_closed).to.equal(true);
-
-    //   // withdraw
+      // withdraw
       const transfer_id_w = "0xeab47fa3a3dc42bc8cbc48c02182669a";
       let receiverBalanceBefore = await olToken.balanceOf(receiverAddr.address);
       let sender_addr = hexStringToByteArray("06505CCD81E562B524D8F656ABD92A15");
-      const withdrawTx = await escrow.connect(executorAddr).withdrawFromEscrow(
+
+      // call using executorAddr
+      await escrow.connect(executorAddr).withdrawFromEscrow(
         sender_addr, // sender
         receiverAddr.address, // receiver
         amount,
         transfer_id_w
       );
-      let receiverBalanceAfter = await olToken.balanceOf(receiverAddr.address);
-      expect(receiverBalanceAfter.toNumber()-receiverBalanceBefore.toNumber()).to.equal(amount);
+      let ai = await escrow.getUnlockedAccountInfo(transfer_id_w);
+      console.log("ai: " + ai);
+      expect(ai.is_closed).to.equal(true); // transfer is pending
 
-      let ai_w = await escrow.getUnlockedAccountInfo(transfer_id_w);
-      expect(ai_w.is_closed).to.equal(true);
+      // call withdraw again using executorAddr, revert
+      await expect(escrow.connect(executorAddr).withdrawFromEscrow(
+        sender_addr, // sender
+        receiverAddr.address, // receiver
+        amount,
+        transfer_id_w
+      )).to.be.revertedWith("transfer has been completed already");
+
+      let receiverBalanceAfter = await olToken.balanceOf(receiverAddr.address);
+      expect(receiverBalanceAfter.toNumber() - receiverBalanceBefore.toNumber()).to.equal(amount);
 
     });
   });
+
 });
 
-function hexStringToByteArray(hexString:String):Uint8Array {
+
+function hexStringToByteArray(hexString: String): Uint8Array {
   if (hexString.length % 2 !== 0) {
-      throw "Must have an even number of hex digits to convert to bytes";
+    throw "Must have an even number of hex digits to convert to bytes";
   }
   var numBytes = hexString.length / 2;
   var byteArray = new Uint8Array(numBytes);
-  for (var i=0; i<numBytes; i++) {
-      byteArray[i] = parseInt(hexString.substr(i*2, 2), 16);
+  for (var i = 0; i < numBytes; i++) {
+    byteArray[i] = parseInt(hexString.substr(i * 2, 2), 16);
   }
   return byteArray;
 }

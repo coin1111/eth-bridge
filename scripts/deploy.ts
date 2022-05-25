@@ -8,8 +8,6 @@ import * as fs from 'fs';
 const COIN_SCALING_FACTOR = 1000000;
 const COIN_SUPPLY = 1000;
 
-
-
 async function main() {
   // Deploy ERC20 token contract
   let OLToken = await ethers.getContractFactory("OLToken");
@@ -19,12 +17,17 @@ async function main() {
   console.log("0LToken contract:", olToken.address);
 
   let [alice, bob, carol, pete, todd, bridgeEscrow, ...addrs] = await ethers.getSigners();
+  console.log("Alice address: ", alice.address);
+  console.log("Bob address: ", bob.address);
+  console.log("Carol address: ", carol.address);
+  console.log("pete address: ", pete.address);
+  console.log("todd address: ", todd.address);
 
 
   // Deploy BridgeEscrow contract
   const BridgeEscrow = await ethers.getContractFactory("BridgeEscrowMultisig");
   const escrow = await BridgeEscrow.connect(bridgeEscrow)
-    .deploy(olToken.address, [alice.address], 1);
+    .deploy(olToken.address, [alice.address, bob.address], 1);
   await escrow.deployed();
   console.log("BridgeEscrow contract:", escrow.address);
 

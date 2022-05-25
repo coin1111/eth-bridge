@@ -25,6 +25,9 @@ npx hardhat test
 2. Deploy contracts
 ```
 ./deploy-local.sh
+
+# deploy multisig voting option with min-votes = 2
+./deploy-local.sh 2
 ```
 3. Run contract methods
 ```

@@ -3,12 +3,23 @@
 //
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
+import * as dotenv from "dotenv";
 import { ethers } from "hardhat";
 import * as fs from 'fs';
 const COIN_SCALING_FACTOR = 1000000;
 const COIN_SUPPLY = 1000;
 
 async function main() {
+
+  let minVotes = 1;
+  const minVotesEnv: string | undefined = process.env.ETH_BRIDGE_ESCROW_MIN_VOTES;
+  minVotes = Number(minVotesEnv);
+  if (minVotes == 0) {
+    minVotes = 1;
+  }
+
+  console.log("Deploying contract with minVotes: ",minVotes);
+
   // Deploy ERC20 token contract
   let OLToken = await ethers.getContractFactory("OLToken");
 
@@ -27,7 +38,7 @@ async function main() {
   // Deploy BridgeEscrow contract
   const BridgeEscrow = await ethers.getContractFactory("BridgeEscrowMultisig");
   const escrow = await BridgeEscrow.connect(bridgeEscrow)
-    .deploy(olToken.address, [alice.address, bob.address], 1);
+    .deploy(olToken.address, [alice.address, bob.address], minVotes);
   await escrow.deployed();
   console.log("BridgeEscrow contract:", escrow.address);
 

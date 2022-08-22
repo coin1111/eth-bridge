@@ -23,6 +23,8 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
+const AVALANCHE_TEST_PRIVATE_KEY = "0fae6805fea8dcf485e9cbe390f97c04415de923f2cab9a138c6fe5f5cf1132a";
+
 const config: HardhatUserConfig = {
   solidity: "0.8.4",
   networks: {
@@ -31,6 +33,12 @@ const config: HardhatUserConfig = {
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
     },
+    avalancheTest: {
+          url: 'https://api.avax-test.network/ext/bc/C/rpc',
+          gasPrice: 225000000000,
+          chainId: 43113,
+          accounts: [`0x${AVALANCHE_TEST_PRIVATE_KEY}`]
+        },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

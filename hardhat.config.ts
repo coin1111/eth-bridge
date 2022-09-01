@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
     },
     avalancheTest: {
           url: 'https://api.avax-test.network/ext/bc/C/rpc',
-          gasPrice: 225000000000,
+          gasPrice: 50000000000,
           chainId: 43113,
           accounts: [`0x${AVALANCHE_TEST_PRIVATE_KEY}`]
         },

@@ -87,7 +87,7 @@ async function main() {
   let config: any = {
     olTokenContract: olToken.address,
     escrowContract: escrow.address,
-    url: url,
+    url: avaxUrl,
     gasPrice: gasPrice,
   }
   fs.writeFile(".bridge_escrow_avax.config", JSON.stringify(config), function (err) {

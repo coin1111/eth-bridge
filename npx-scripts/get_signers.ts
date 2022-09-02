@@ -43,6 +43,6 @@ export function getSigners(): Map<string, ethers.Wallet> {
   return wallets;
 }
 export function getConfig(): any {
-  let configJson: any = fs.readFileSync(".bridge_escrow.config", 'utf8').toString().trimEnd();
+  let configJson: any = fs.readFileSync(".bridge_escrow_avax.config", 'utf8').toString().trimEnd();
   return JSON.parse(configJson);
 }

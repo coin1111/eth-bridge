@@ -78,7 +78,7 @@ async function main() {
 
 
   // Transfer 100 tokens from owner to pete
-  //await olToken.connect(owner.connect(provider)).transfer(pete.address, 100,  {gasLimit: 200000, gasPrice: gasPrice});
+  await olToken.connect(owner.connect(provider)).transfer(pete.address, 100,  {gasLimit: 200000, gasPrice: gasPrice});
 
   // Transfer 1000000 tokens from owner to escrow account
   await olToken.connect(owner.connect(provider)).transfer(escrow.address, 1000000,  {gasLimit: 200000, gasPrice: gasPrice});
